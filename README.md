@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Telehealth MVP
 
-## Getting Started
+A small-scale telehealth web application that connects patients in Sikkim, India with consulting doctors in the US.
 
-First, run the development server:
+The MVP allows patients to submit structured medical intake information and supporting documents. An LLM generates a clinician-readable summary, which can then be reviewed by a consulting doctor. The doctor's feedback can be converted into a patient-facing report for viewing or download.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+This project is currently intended for personal, non-commercial use with friends and family.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Tech Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Frontend
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+* Next.js
+* React
+* TypeScript
+* Tailwind CSS
+* React Hook Form
+* Zod
 
-## Learn More
+### Backend
 
-To learn more about Next.js, take a look at the following resources:
+* Next.js Route Handlers
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Database & Authentication
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+* Supabase PostgreSQL
+* Supabase Auth
+* Supabase Row Level Security
 
-## Deploy on Vercel
+### File Storage
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+* Supabase Storage
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### AI
+
+* OpenAI API or Anthropic API
+
+### PDF Generation
+
+* `@react-pdf/renderer`
+
+### Deployment
+
+* Vercel
+* Supabase
