@@ -1,0 +1,124 @@
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { loginSchema, patientRegistrationSchema } from "@/lib/validation/auth";
+import { redirect } from "next/navigation";
+
+export type RegistrationState = {
+  success?: boolean;
+  message?: string;
+  fieldErrors?: Record<string, string[] | undefined>;
+};
+
+export type LoginState = {
+  message?: string;
+  fieldErrors?: {
+    email?: string[];
+    password?: string[];
+  };
+};
+
+export async function registerPatient(
+  _previousState: RegistrationState,
+  formData: FormData,
+): Promise<RegistrationState> {
+  const result = patientRegistrationSchema.safeParse({
+    name: formData.get("name"),
+    email: formData.get("email"),
+    dob: formData.get("dob"),
+    password: formData.get("password"),
+  });
+
+  if (!result.success) {
+    return {
+      fieldErrors: result.error.flatten().fieldErrors,
+    };
+  }
+
+  const supabase = await createClient();
+
+  const { error } = await supabase.auth.signUp({
+    email: result.data.email,
+    password: result.data.password,
+    options: {
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/confirm`,
+      data: {
+        full_name: result.data.name,
+        date_of_birth: result.data.dob,
+      },
+    },
+  });
+
+  if (error) {
+    // Log the detailed error on the server.
+    console.error("Patient registration failed", error);
+
+    // Avoid revealing whether an email address already exists.
+    return {
+      message:
+        "We could not complete registration. Check your information and try again.",
+    };
+  }
+
+  return {
+    success: true,
+    message: "Check your email to confirm your account.",
+  };
+}
+
+export async function loginPatient(
+  _previousState: LoginState,
+  formData: FormData,
+): Promise<LoginState> {
+  const result = loginSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
+
+  if (!result.success) {
+    return {
+      fieldErrors: result.error.flatten().fieldErrors,
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({
+    email: result.data.email,
+    password: result.data.password,
+  });
+
+  if (error) {
+    return {
+      message: "The email address or password is incorrect.",
+    };
+  }
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    await supabase.auth.signOut();
+
+    return {
+      message: "We could not verify your account.",
+    };
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError || profile?.role !== "patient") {
+    await supabase.auth.signOut();
+
+    return {
+      message: "This account cannot access the patient portal.",
+    };
+  }
+
+  redirect("/");
+}
