@@ -3,11 +3,17 @@
 import { createClient } from "@/lib/supabase/server";
 import { loginSchema, patientRegistrationSchema } from "@/lib/validation/auth";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 
 export type RegistrationState = {
   success?: boolean;
   message?: string;
-  fieldErrors?: Record<string, string[] | undefined>;
+  fieldErrors?: {
+    name?: string[];
+    email?: string[];
+    dob?: string[];
+    password?: string[];
+  };
 };
 
 export type LoginState = {
@@ -30,8 +36,23 @@ export async function registerPatient(
   });
 
   if (!result.success) {
+    const errors = z.treeifyError(result.error);
+
     return {
-      fieldErrors: result.error.flatten().fieldErrors,
+      fieldErrors: {
+        ...(errors.properties?.name?.errors.length && {
+          name: errors.properties.name.errors,
+        }),
+        ...(errors.properties?.email?.errors.length && {
+          email: errors.properties.email.errors,
+        }),
+        ...(errors.properties?.dob?.errors.length && {
+          dob: errors.properties.dob.errors,
+        }),
+        ...(errors.properties?.password?.errors.length && {
+          password: errors.properties.password.errors,
+        }),
+      },
     };
   }
 
@@ -76,8 +97,17 @@ export async function loginPatient(
   });
 
   if (!result.success) {
+    const errors = z.treeifyError(result.error);
+
     return {
-      fieldErrors: result.error.flatten().fieldErrors,
+      fieldErrors: {
+        ...(errors.properties?.email?.errors.length && {
+          email: errors.properties.email.errors,
+        }),
+        ...(errors.properties?.password?.errors.length && {
+          password: errors.properties.password.errors,
+        }),
+      },
     };
   }
 
@@ -120,5 +150,18 @@ export async function loginPatient(
     };
   }
 
-  redirect("/");
+  redirect("/patient/dashboard");
+}
+
+export async function logoutPatient() {
+  const supabase = await createClient();
+
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    console.error("Patient logout failed", error);
+    return;
+  }
+
+  redirect("/patient/login");
 }

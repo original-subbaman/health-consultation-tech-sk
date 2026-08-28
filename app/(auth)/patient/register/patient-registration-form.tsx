@@ -1,8 +1,6 @@
 "use client";
-
-import { loginPatient, type LoginState } from "@/actions/auth";
 import { Eye, EyeOff } from "lucide-react";
-import Link from "next/link";
+import { registerPatient, type RegistrationState } from "@/actions/auth";
 import { useActionState, useState } from "react";
 import {
   Button,
@@ -13,19 +11,18 @@ import {
   TextField,
 } from "react-aria-components";
 
-const initialState: LoginState = {};
+const initialState: RegistrationState = {};
 
 const fieldClassName =
   "mt-2 w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3 text-on-surface outline-none transition placeholder:text-outline data-[focused]:border-primary data-[focused]:ring-3 data-[focused]:ring-primary-fixed/60 data-[invalid]:border-error data-[invalid]:ring-3 data-[invalid]:ring-error-container";
-
 const labelClassName = "text-label-md text-on-surface";
 const errorClassName = "mt-1.5 text-sm text-error";
 
-export function PatientLoginForm() {
+export function PatientRegistrationForm() {
   const [showPassword, setShowPassword] = useState(false);
 
-  const [state, formAction, pending] = useActionState(
-    loginPatient,
+  const [state, formAction, isPending] = useActionState(
+    registerPatient,
     initialState,
   );
 
@@ -33,8 +30,18 @@ export function PatientLoginForm() {
     <Form
       action={formAction}
       validationErrors={state.fieldErrors}
-      className="mt-8 space-y-5"
+      className="mt-3 space-y-3"
     >
+      <TextField name="name" type="text" isRequired>
+        <Label className={labelClassName}>Full name</Label>
+        <Input
+          autoComplete="name"
+          placeholder="Enter your full name"
+          className={fieldClassName}
+        />
+        <FieldError className={errorClassName} />
+      </TextField>
+
       <TextField name="email" type="email" isRequired>
         <Label className={labelClassName}>Email address</Label>
         <Input
@@ -45,21 +52,20 @@ export function PatientLoginForm() {
         <FieldError className={errorClassName} />
       </TextField>
 
-      <TextField name="password" type="password" isRequired minLength={8}>
-        <div className="flex items-center justify-between gap-4">
-          <Label className={labelClassName}>Password</Label>
-          <Link
-            href="/forgot-password"
-            className="text-sm font-medium text-primary transition hover:text-primary-container hover:underline"
-          >
-            Forgot password?
-          </Link>
-        </div>
+      <TextField name="dob" type="date" isRequired>
+        <Label className={labelClassName}>Date of birth</Label>
+        <Input autoComplete="bday" className={fieldClassName} />
+        <FieldError className={errorClassName} />
+      </TextField>
+
+      <TextField name="password" type="password" isRequired>
+        <Label className={labelClassName}>Password</Label>
         <div className="relative">
           <Input
             type={showPassword ? "text" : "password"}
-            autoComplete="current-password"
-            placeholder="Enter your password"
+            autoComplete="new-password"
+            minLength={8}
+            placeholder="At least 8 characters"
             className={fieldClassName}
           />
           <Button
@@ -74,21 +80,21 @@ export function PatientLoginForm() {
         <FieldError className={errorClassName} />
       </TextField>
 
-      {state.message && (
+      {state?.success && (
         <p
           role="alert"
-          className="rounded-lg bg-error-container px-4 py-3 text-sm text-on-error-container"
+          className="text-center rounded-lg bg-green-300 px-4 py-3 text-sm"
         >
-          {state.message}
+          Success! A verification link as been sent to your email
         </p>
       )}
 
       <Button
+        isDisabled={isPending}
         type="submit"
-        isDisabled={pending}
-        className="w-full cursor-pointer rounded-lg bg-primary px-6 py-3.5 text-label-md text-on-primary shadow-ambient outline-none transition data-[hovered]:-translate-y-0.5 data-[hovered]:shadow-ambient-hover data-[focused]:ring-3 data-[focused]:ring-primary-fixed/60 data-[pressed]:translate-y-0 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-60"
+        className="w-full cursor-pointer rounded-lg bg-primary px-6 py-3.5 text-label-md text-on-primary shadow-ambient outline-none transition data-[hovered]:-translate-y-0.5 data-[hovered]:shadow-ambient-hover data-[focused]:ring-3 data-[focused]:ring-primary-fixed/60 data-[pressed]:translate-y-0"
       >
-        {pending ? "Signing in…" : "Sign in"}
+        {isPending ? "Creating account..." : "Create Account"}
       </Button>
     </Form>
   );
