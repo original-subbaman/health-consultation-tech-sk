@@ -1,6 +1,7 @@
 import { SquareActivity } from "lucide-react";
 import type { NavigationItem } from "../portal/portal-shell";
 import NavItem from "../navigation/nav-item";
+import LogoutForm from "./logout-form";
 
 type SidebarProps = {
   user: { name: string; role: string };
@@ -34,14 +35,19 @@ export default function Sidebar({ user, navigation }: SidebarProps) {
           </span>
         </div>
       </div>
-      {navigation.map(({ href, label, icon: Icon }) => (
-        <NavItem
-          key={href}
-          href={href}
-          label={label}
-          icon={<Icon aria-hidden="true" className="size-5" />}
-        />
-      ))}
+      <div className="h-full flex-1 flex-col gap-2">
+        {navigation.map(({ href, label, icon: Icon }) => (
+          <NavItem
+            key={href}
+            href={href}
+            label={label}
+            icon={<Icon aria-hidden="true" className="size-5" />}
+          />
+        ))}
+      </div>
+      <div className="border-t-2 border-gray-500 px-4 py-3">
+        <LogoutForm />
+      </div>
     </nav>
   );
 }

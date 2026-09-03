@@ -153,15 +153,15 @@ export async function loginPatient(
   redirect("/patient/dashboard");
 }
 
-export async function logoutPatient() {
+export async function logout() {
   const supabase = await createClient();
 
   const { error } = await supabase.auth.signOut();
 
   if (error) {
-    console.error("Patient logout failed", error);
+    console.error("Logout failed", error);
     return;
   }
 
-  redirect("/patient/login");
+  redirect("/");
 }
