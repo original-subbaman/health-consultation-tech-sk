@@ -24,7 +24,7 @@ export function PortalShell({ children, navigation, user }: PortalShellProps) {
       <Sidebar user={user} navigation={navigation} />
       <div className="min-w-0 md:min-h-dvh">
         <Topbar user={user} />
-        <main className="mx-auto w-full max-w-screen-2xl p-4 sm:p-6 lg:p-8">
+        <main className="mx-auto w-full max-w-screen-2xl p-4 pb-24 sm:p-6 sm:pb-24 md:pb-6 lg:p-8">
           {children}
         </main>
         <MobileBottomBar navigation={navigation} />
