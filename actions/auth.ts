@@ -153,6 +153,72 @@ export async function loginPatient(
   redirect("/patient/dashboard");
 }
 
+export async function loginAdmin(
+  _previousState: LoginState,
+  formData: FormData,
+): Promise<LoginState> {
+  const result = loginSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
+
+  if (!result.success) {
+    const errors = z.treeifyError(result.error);
+
+    return {
+      fieldErrors: {
+        ...(errors.properties?.email?.errors.length && {
+          email: errors.properties.email.errors,
+        }),
+        ...(errors.properties?.password?.errors.length && {
+          password: errors.properties.password.errors,
+        }),
+      },
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({
+    email: result.data.email,
+    password: result.data.password,
+  });
+
+  if (error) {
+    return {
+      message: "The email address or password is incorrect.",
+    };
+  }
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    await supabase.auth.signOut();
+
+    return {
+      message: "We could not verify your account.",
+    };
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError || profile?.role !== "admin") {
+    await supabase.auth.signOut();
+
+    return {
+      message: "This account cannot access the admin portal.",
+    };
+  }
+
+  redirect("/admin/dashboard");
+}
+
 export async function logout() {
   const supabase = await createClient();
 
