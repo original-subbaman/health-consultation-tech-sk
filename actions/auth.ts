@@ -150,6 +150,43 @@ export async function loginPatient(
     };
   }
 
+  const dateOfBirth = z.iso.date().safeParse(user.user_metadata.date_of_birth);
+
+  if (!dateOfBirth.success) {
+    await supabase.auth.signOut();
+
+    console.error("Patient profile setup failed: invalid date of birth", {
+      userId: user.id,
+    });
+
+    return {
+      message: "We could not finish setting up your account.",
+    };
+  }
+
+  const { error: patientProfileError } = await supabase
+    .from("patient_profiles")
+    .upsert(
+      {
+        user_id: user.id,
+        date_of_birth: dateOfBirth.data,
+      },
+      {
+        onConflict: "user_id",
+        ignoreDuplicates: true,
+      },
+    );
+
+  if (patientProfileError) {
+    await supabase.auth.signOut();
+
+    console.error("Patient profile setup failed", patientProfileError);
+
+    return {
+      message: "We could not finish setting up your account.",
+    };
+  }
+
   redirect("/patient/dashboard");
 }
 
