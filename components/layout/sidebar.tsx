@@ -35,7 +35,7 @@ export default function Sidebar({ user, navigation }: SidebarProps) {
           </span>
         </div>
       </div>
-      <div className="h-full flex-1 flex-col gap-2">
+      <div className="flex h-full flex-1 flex-col gap-2">
         {navigation.map(({ href, label, icon: Icon }) => (
           <NavItem
             key={href}

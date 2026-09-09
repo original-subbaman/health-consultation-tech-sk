@@ -11,6 +11,12 @@ export type PatientUser = {
   role: typeof USER_ROLES.PATIENT;
 };
 
+export type AdminUser = {
+  id: string;
+  name: string;
+  role: typeof USER_ROLES.ADMIN;
+};
+
 /**
  * Verifies the current Supabase session and authorizes access to patient-only
  * server-rendered routes. The result is cached for the lifetime of a render so
@@ -51,5 +57,48 @@ export const requirePatient = cache(async (): Promise<PatientUser> => {
         ? metadataName.trim()
         : (user.email ?? "Patient"),
     role: "patient",
+  };
+});
+
+/**
+ * Verifies the current Supabase session and authorizes access to admin-only
+ * server-rendered routes. The result is cached for the lifetime of a render so
+ * layouts, pages, and data loaders can safely call it without duplicate reads.
+ */
+export const requireAdmin = cache(async (): Promise<AdminUser> => {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    redirect("/admin/login");
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError) {
+    console.error("Failed to authorize admin", profileError);
+    redirect("/");
+  }
+
+  if (profile.role !== USER_ROLES.ADMIN) {
+    redirect("/");
+  }
+
+  const metadataName = user.user_metadata.full_name;
+
+  return {
+    id: user.id,
+    name:
+      typeof metadataName === "string" && metadataName.trim()
+        ? metadataName.trim()
+        : (user.email ?? "Admin"),
+    role: "admin",
   };
 });
