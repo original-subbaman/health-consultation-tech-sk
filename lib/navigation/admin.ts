@@ -1,4 +1,4 @@
-import { ClipboardList, LayoutDashboard } from "lucide-react";
+import { BriefcaseMedical, ClipboardList, LayoutDashboard } from "lucide-react";
 
 export const adminNavigation = [
   {
@@ -7,8 +7,8 @@ export const adminNavigation = [
     icon: LayoutDashboard,
   },
   {
-    label: "Consultation Requests",
-    href: "/admin/consultation-requests",
-    icon: ClipboardList,
+    label: "Add Consultants",
+    href: "/admin/add-consultant",
+    icon: BriefcaseMedical,
   },
 ];
