@@ -7,6 +7,11 @@ export const adminNavigation = [
     icon: LayoutDashboard,
   },
   {
+    label: "Consultants",
+    href: "/admin/consultants",
+    icon: ClipboardList,
+  },
+  {
     label: "Add Consultants",
     href: "/admin/add-consultant",
     icon: BriefcaseMedical,
