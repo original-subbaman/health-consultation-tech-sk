@@ -2,6 +2,7 @@
 
 import BaselineHealthSnapshot from "@/components/book-consultation/BaselineHealthSnapshot";
 import CurrentIssueTrend from "@/components/book-consultation/CurrentIssueTrend";
+import MedicalHistory from "@/components/book-consultation/MedicalHistory";
 import {
   consultationFormDefaultValues,
   type ConsultationFormValues,
@@ -185,6 +186,7 @@ export default function BookConsultationPage() {
         {currentStep === 1 && <PatientVitals />}
         {currentStep === 2 && <BaselineHealthSnapshot />}
         {currentStep === 3 && <CurrentIssueTrend />}
+        {currentStep === 4 && <MedicalHistory />}
 
         <div className="flex flex-col items-center justify-between gap-4 py-4 sm:flex-row">
           <NavigationArrowButton

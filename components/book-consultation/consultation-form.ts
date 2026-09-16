@@ -23,6 +23,20 @@ export type ConsultationFormValues = {
     longitudinalTrend: string;
     redFlagSymptoms: string[];
   };
+  medicalHistory: {
+    conditions: string[];
+    recentSymptoms: string[];
+    medications: string;
+    allergyStatus: "" | "yes" | "none";
+    allergyDetails: string;
+    medicalRecords: File[];
+    lifestyle: {
+      recentWeightChange: "" | "yes" | "no";
+      smoking: "" | "never" | "former" | "current";
+      alcohol: "" | "none" | "occasional" | "regular";
+      additionalNotes: string;
+    };
+  };
 };
 
 export const consultationFormDefaultValues: ConsultationFormValues = {
@@ -51,5 +65,19 @@ export const consultationFormDefaultValues: ConsultationFormValues = {
     speedOfChange: "",
     longitudinalTrend: "",
     redFlagSymptoms: ["none"],
+  },
+  medicalHistory: {
+    conditions: ["none"],
+    recentSymptoms: ["none"],
+    medications: "",
+    allergyStatus: "",
+    allergyDetails: "",
+    medicalRecords: [],
+    lifestyle: {
+      recentWeightChange: "",
+      smoking: "",
+      alcohol: "",
+      additionalNotes: "",
+    },
   },
 };
