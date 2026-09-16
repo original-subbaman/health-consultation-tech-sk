@@ -1,6 +1,7 @@
 "use client";
 
 import BaselineHealthSnapshot from "@/components/book-consultation/BaselineHealthSnapshot";
+import CurrentIssueTrend from "@/components/book-consultation/CurrentIssueTrend";
 import {
   consultationFormDefaultValues,
   type ConsultationFormValues,
@@ -183,6 +184,7 @@ export default function BookConsultationPage() {
       <div className="flex flex-col gap-8 lg:col-span-8">
         {currentStep === 1 && <PatientVitals />}
         {currentStep === 2 && <BaselineHealthSnapshot />}
+        {currentStep === 3 && <CurrentIssueTrend />}
 
         <div className="flex flex-col items-center justify-between gap-4 py-4 sm:flex-row">
           <NavigationArrowButton

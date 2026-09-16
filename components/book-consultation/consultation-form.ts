@@ -17,6 +17,12 @@ export type ConsultationFormValues = {
     onset: string;
     pain: number | null;
   };
+  currentIssueTrend: {
+    trend: string;
+    speedOfChange: string;
+    longitudinalTrend: string;
+    redFlagSymptoms: string[];
+  };
 };
 
 export const consultationFormDefaultValues: ConsultationFormValues = {
@@ -39,5 +45,11 @@ export const consultationFormDefaultValues: ConsultationFormValues = {
     symptoms: ["Pain", "Fatigue / Energy", "Sleep Problem"],
     onset: "1–3 days ago",
     pain: 5,
+  },
+  currentIssueTrend: {
+    trend: "",
+    speedOfChange: "",
+    longitudinalTrend: "",
+    redFlagSymptoms: ["none"],
   },
 };
