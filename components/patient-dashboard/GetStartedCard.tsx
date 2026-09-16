@@ -1,4 +1,5 @@
 import { Rocket } from "lucide-react";
+import Link from "next/link";
 
 export default function GetStartedCard() {
   return (
@@ -17,12 +18,16 @@ export default function GetStartedCard() {
           profile to unlock personalized insights.
         </p>
         <div className="flex flex-wrap gap-3 mt-2">
-          <button className="bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md py-2.5 px-5 rounded-md transition-colors">
-            Book Consultation
-          </button>
-          <button className="bg-surface-container-highest hover:bg-surface-container-high text-on-surface font-label-md text-label-md py-2.5 px-5 rounded-md transition-colors border border-outline-variant">
-            Complete Profile
-          </button>
+          <Link href="/patient/book-consultation">
+            <button className="bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md py-2.5 px-5 rounded-md transition-colors">
+              Book Consultation
+            </button>
+          </Link>
+          <Link href="/patient/profile">
+            <button className="bg-surface-container-highest hover:bg-surface-container-high text-on-surface font-label-md text-label-md py-2.5 px-5 rounded-md transition-colors border border-outline-variant">
+              Complete Profile
+            </button>
+          </Link>
         </div>
       </div>
     </section>
