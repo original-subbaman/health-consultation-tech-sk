@@ -1,18 +1,13 @@
 "use client";
 
 import type { ConsultationFormValues } from "@/components/book-consultation/consultation-form";
-import { ChevronDown, Ruler, Scale, UserRound } from "lucide-react";
+import { HeartPulse, Scale } from "lucide-react";
 import { Controller, useFormContext } from "react-hook-form";
 import {
-  Button,
   FieldError,
   Input,
   Label,
-  ListBox,
-  ListBoxItem,
-  Popover,
-  Select,
-  SelectValue,
+  Text,
   TextField,
 } from "react-aria-components";
 import FormSectionHeader from "./FormSectionHeader";
@@ -23,21 +18,13 @@ const labelClassName =
 const inputClassName =
   "w-full rounded-lg border border-outline-variant bg-surface px-4 py-3 text-body-md text-on-surface outline-none transition placeholder:text-outline data-[focused]:border-primary data-[focused]:ring-3 data-[focused]:ring-primary-fixed/60 data-[invalid]:border-error data-[invalid]:ring-3 data-[invalid]:ring-error-container";
 const errorClassName = "text-label-sm text-error";
-
-const sexOptions = [
-  { id: "female", label: "Female" },
-  { id: "male", label: "Male" },
-  { id: "intersex", label: "Intersex" },
-  { id: "prefer_not_to_say", label: "Prefer not to say" },
-];
+const helperClassName = "text-label-sm text-on-surface-variant";
 
 export default function PatientVitals() {
   const { control } = useFormContext<ConsultationFormValues>();
 
   return (
-    <section
-      className="flex flex-col gap-8 rounded-xl bg-surface-container-lowest p-5 shadow-sm sm:p-8"
-    >
+    <section className="flex flex-col gap-8 rounded-xl bg-surface-container-lowest p-5 shadow-sm sm:p-8">
       <FormSectionHeader
         heading="Confirm your details and vitals"
         subheading="Patient information"
@@ -48,64 +35,65 @@ export default function PatientVitals() {
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <Controller
             control={control}
-            name="patient.name"
+            name="patient.systolicBp"
+            rules={{
+              validate: (value) =>
+                value === null
+                  ? "Systolic blood pressure is required."
+                  : value < 40 || value > 300
+                    ? "Enter a value between 40 and 300 mmHg."
+                    : true,
+            }}
             render={({ field, fieldState }) => (
               <TextField
                 className={fieldClassName}
                 name={field.name}
                 onBlur={field.onBlur}
-                onChange={field.onChange}
-                type="text"
-                value={field.value}
+                onChange={(value) =>
+                  field.onChange(value === "" ? null : Number(value))
+                }
+                type="number"
+                value={field.value?.toString() ?? ""}
                 isInvalid={fieldState.invalid}
                 isRequired
               >
                 <Label className={labelClassName}>
-                  Full name <RequiredMark />
+                  Systolic blood pressure (mmHg) <RequiredMark />
                 </Label>
                 <div className="relative">
-                  <UserRound
+                  <HeartPulse
                     aria-hidden="true"
                     className="pointer-events-none absolute inset-y-0 left-3.5 my-auto size-5 text-outline"
                   />
                   <Input
-                    autoComplete="name"
                     className={`${inputClassName} pl-11`}
-                    placeholder="Enter your full name"
+                    inputMode="numeric"
+                    max={300}
+                    min={40}
+                    placeholder="e.g. 120"
                   />
                 </div>
-                <FieldError className={errorClassName} />
+                <Text className={helperClassName} slot="description">
+                  Enter the upper number from your blood pressure reading.
+                </Text>
+                <FieldError className={errorClassName}>
+                  {fieldState.error?.message}
+                </FieldError>
               </TextField>
             )}
           />
 
           <Controller
             control={control}
-            name="patient.nickname"
-            render={({ field, fieldState }) => (
-              <TextField
-                className={fieldClassName}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                type="text"
-                value={field.value}
-                isInvalid={fieldState.invalid}
-              >
-                <Label className={labelClassName}>Nickname</Label>
-                <Input
-                  autoComplete="nickname"
-                  className={inputClassName}
-                  placeholder="How should we address you?"
-                />
-                <FieldError className={errorClassName} />
-              </TextField>
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="patient.weight"
+            name="patient.diastolicBp"
+            rules={{
+              validate: (value) =>
+                value === null
+                  ? "Diastolic BP is required"
+                  : value >= 30 && value <= 200
+                    ? true
+                    : "Enter a value between 30 and 200 mmHg.",
+            }}
             render={({ field, fieldState }) => (
               <TextField
                 className={fieldClassName}
@@ -118,7 +106,79 @@ export default function PatientVitals() {
                 value={field.value?.toString() ?? ""}
                 isInvalid={fieldState.invalid}
               >
-                <Label className={labelClassName}>Weight (kg)</Label>
+                <Label className={labelClassName}>
+                  Diastolic blood pressure (mmHg)
+                </Label>
+                <Input
+                  className={inputClassName}
+                  inputMode="numeric"
+                  max={200}
+                  min={30}
+                  placeholder="e.g. 80"
+                />
+                <Text className={helperClassName} slot="description">
+                  Enter the lower number from your blood pressure reading.
+                </Text>
+                <FieldError className={errorClassName}>
+                  {fieldState.error?.message}
+                </FieldError>
+              </TextField>
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="patient.measuredAt"
+            rules={{ required: "Measurement date is required." }}
+            render={({ field, fieldState }) => (
+              <TextField
+                className={fieldClassName}
+                name={field.name}
+                onBlur={field.onBlur}
+                onChange={field.onChange}
+                type="date"
+                value={field.value ?? ""}
+                isInvalid={fieldState.invalid}
+                isRequired
+              >
+                <Label className={labelClassName}>
+                  Measurement date <RequiredMark />
+                </Label>
+                <Input className={inputClassName} />
+                <Text className={helperClassName} slot="description">
+                  Select the date these measurements were recorded.
+                </Text>
+                <FieldError className={errorClassName}>
+                  {fieldState.error?.message}
+                </FieldError>
+              </TextField>
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="patient.weightKg"
+            rules={{
+              validate: (value) =>
+                value === null
+                  ? "Patient weight is required"
+                  : value > 0 && value <= 500
+                    ? true
+                    : "Enter a weight greater than 0 and no more than 500 kg.",
+            }}
+            render={({ field, fieldState }) => (
+              <TextField
+                className={fieldClassName}
+                name={field.name}
+                onBlur={field.onBlur}
+                onChange={(value) =>
+                  field.onChange(value === "" ? null : Number(value))
+                }
+                type="number"
+                value={field.value?.toString() ?? ""}
+                isInvalid={fieldState.invalid}
+              >
+                <Label className={labelClassName}>Current weight (kg)</Label>
                 <div className="relative">
                   <Scale
                     aria-hidden="true"
@@ -129,114 +189,16 @@ export default function PatientVitals() {
                     inputMode="decimal"
                     max={500}
                     min={1}
-                    placeholder="Enter weight"
+                    placeholder="e.g. 70.5"
                     step={0.1}
                   />
                 </div>
-                <FieldError className={errorClassName} />
-              </TextField>
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="patient.height"
-            render={({ field, fieldState }) => (
-              <TextField
-                className={fieldClassName}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={(value) =>
-                  field.onChange(value === "" ? null : Number(value))
-                }
-                type="number"
-                value={field.value?.toString() ?? ""}
-                isInvalid={fieldState.invalid}
-              >
-                <Label className={labelClassName}>Height (cm)</Label>
-                <div className="relative">
-                  <Ruler
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-y-0 left-3.5 my-auto size-5 text-outline"
-                  />
-                  <Input
-                    className={`${inputClassName} pl-11`}
-                    inputMode="decimal"
-                    max={300}
-                    min={30}
-                    placeholder="Enter height"
-                    step={0.1}
-                  />
-                </div>
-                <FieldError className={errorClassName} />
-              </TextField>
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="patient.sex"
-            render={({ field, fieldState }) => (
-              <Select
-                className={fieldClassName}
-                name={field.name}
-                onBlur={field.onBlur}
-                onSelectionChange={(key) => field.onChange(String(key))}
-                placeholder="Select sex"
-                selectedKey={field.value || null}
-                isInvalid={fieldState.invalid}
-                isRequired
-              >
-                <Label className={labelClassName}>
-                  Sex <RequiredMark />
-                </Label>
-                <Button
-                  className={`${inputClassName} flex cursor-pointer items-center gap-3 text-left`}
-                >
-                  <SelectValue className="min-w-0 flex-1 data-[placeholder]:text-outline" />
-                  <ChevronDown
-                    aria-hidden="true"
-                    className="size-5 shrink-0 text-outline"
-                  />
-                </Button>
-                <FieldError className={errorClassName} />
-                <Popover className="w-(--trigger-width) overflow-hidden rounded-lg border border-outline-variant bg-surface p-1 shadow-lg outline-none">
-                  <ListBox className="max-h-64 overflow-auto outline-none">
-                    {sexOptions.map((option) => (
-                      <ListBoxItem
-                        className="cursor-pointer rounded-md px-3 py-2.5 text-body-md text-on-surface outline-none data-[focused]:bg-surface-container-high data-[selected]:bg-primary-fixed/50 data-[selected]:font-semibold data-[selected]:text-primary"
-                        id={option.id}
-                        key={option.id}
-                        textValue={option.label}
-                      >
-                        {option.label}
-                      </ListBoxItem>
-                    ))}
-                  </ListBox>
-                </Popover>
-              </Select>
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="patient.dob"
-            render={({ field, fieldState }) => (
-              <TextField
-                className={fieldClassName}
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                type="date"
-                value={field.value}
-                isInvalid={fieldState.invalid}
-                isRequired
-              >
-                <Label className={labelClassName}>
-                  Date of birth <RequiredMark />
-                </Label>
-                <Input autoComplete="bday" className={inputClassName} />
-                <FieldError className={errorClassName} />
+                <Text className={helperClassName} slot="description">
+                  Enter your most recently measured weight in kilograms.
+                </Text>
+                <FieldError className={errorClassName}>
+                  {fieldState.error?.message}
+                </FieldError>
               </TextField>
             )}
           />
