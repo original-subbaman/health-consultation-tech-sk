@@ -1,11 +1,9 @@
 export type ConsultationFormValues = {
   patient: {
-    name: string;
-    nickname: string;
-    weight: number | null;
-    height: number | null;
-    sex: "" | "female" | "male" | "intersex" | "prefer_not_to_say";
-    dob: string;
+    systolicBp: number | null;
+    diastolicBp: number | null;
+    weightKg: number | null;
+    measuredAt: string | null;
   };
   baseline: {
     redFlags: string[];
@@ -41,12 +39,10 @@ export type ConsultationFormValues = {
 
 export const consultationFormDefaultValues: ConsultationFormValues = {
   patient: {
-    name: "",
-    nickname: "",
-    weight: null,
-    height: null,
-    sex: "",
-    dob: "",
+    systolicBp: null,
+    diastolicBp: null,
+    weightKg: null,
+    measuredAt: null,
   },
   baseline: {
     redFlags: ["none"],
