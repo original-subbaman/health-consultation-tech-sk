@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { FieldPath, FormProvider, useForm } from "react-hook-form";
+import { GetConsultationFormValuesResult } from "@/lib/data/consultation";
 
 const steps = [
   ["Patient Information", "Patient Vitals & Measurements"],
@@ -40,12 +41,16 @@ const stepFields: Partial<Record<number, FieldPath<ConsultationFormValues>[]>> =
 
 export default function BookConsultationForm({
   consultationId,
+  formValues,
 }: {
   consultationId: string;
+  formValues: GetConsultationFormValuesResult;
 }) {
   const [currentStep, setCurrentStep] = useState(1);
   const form = useForm<ConsultationFormValues>({
-    defaultValues: consultationFormDefaultValues,
+    defaultValues: formValues.success
+      ? formValues.values
+      : consultationFormDefaultValues,
     mode: "onBlur",
     shouldUnregister: false,
   });

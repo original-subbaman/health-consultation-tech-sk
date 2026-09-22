@@ -1,5 +1,8 @@
 import BookConsultationForm from "@/app/(portals)/patient/book-consultation/BookConsultationForm";
-import { getActiveConsultation } from "@/lib/data/consultation";
+import {
+  getActiveConsultation,
+  getConsultationFormValues,
+} from "@/lib/data/consultation";
 
 export default async function BookConsultationPage() {
   const result = await getActiveConsultation();
@@ -17,5 +20,12 @@ export default async function BookConsultationPage() {
     );
   }
 
-  return <BookConsultationForm consultationId={result.consultation.id} />;
+  const formValues = await getConsultationFormValues(result.consultation.id);
+
+  return (
+    <BookConsultationForm
+      consultationId={result.consultation.id}
+      formValues={formValues}
+    />
+  );
 }
