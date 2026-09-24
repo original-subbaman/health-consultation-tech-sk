@@ -1,20 +1,28 @@
 "use client";
 
 import type { ConsultationFormValues } from "@/components/book-consultation/consultation-form";
-import { Check, FileText, Upload } from "lucide-react";
+import { FileText, Upload } from "lucide-react";
 import { useController, useFormContext } from "react-hook-form";
+import RequiredMark from "./RequiredMark";
 import {
-  Checkbox,
   CheckboxGroup,
   FieldError,
   Label,
-  RadioButton,
-  RadioField,
-  RadioGroup,
   Text,
   TextArea,
   TextField,
 } from "react-aria-components";
+import {
+  ChoiceCheckbox,
+  descriptionClassName,
+  errorClassName,
+  FormSection,
+  getExclusiveNoneValues,
+  questionClassName,
+  questionLabelClassName,
+  RadioChoiceGroup,
+  textInputClassName,
+} from "./FormControls";
 import FormSectionHeader from "./FormSectionHeader";
 
 const conditionOptions = [
@@ -40,13 +48,6 @@ const recentSymptomOptions = [
   ["neurological_symptoms", "Headaches, dizziness, or fainting"],
   ["mental_health_sleep", "Anxiety, depression, or sleep difficulties"],
 ] as const;
-
-const questionClassName = "flex flex-col gap-3";
-const questionLabelClassName = "font-headline-md text-lg text-on-surface";
-const descriptionClassName = "text-label-md text-on-surface-variant";
-const textInputClassName =
-  "w-full rounded-lg bg-surface-container-low px-4 py-3 text-body-md text-on-surface outline-none transition-all placeholder:text-outline data-[focused]:bg-surface-container-lowest data-[focused]:shadow-md data-[focus-visible]:ring-3 data-[focus-visible]:ring-primary-fixed/60 data-[invalid]:ring-2 data-[invalid]:ring-error";
-const errorClassName = "text-label-sm text-error";
 
 export default function MedicalHistory() {
   const { control, setValue } = useFormContext<ConsultationFormValues>();
@@ -117,22 +118,6 @@ export default function MedicalHistory() {
     name: "medicalHistory.lifestyle.additionalNotes",
   });
 
-  function selectExclusiveNone(
-    values: string[],
-    previousValues: string[],
-    onChange: (values: string[]) => void,
-  ) {
-    const selectedNone = values.includes("none");
-    const noneWasSelected = previousValues.includes("none");
-
-    if (selectedNone && !noneWasSelected) {
-      onChange(["none"]);
-      return;
-    }
-
-    onChange(values.filter((value) => value !== "none"));
-  }
-
   function handleAllergyStatusChange(value: string) {
     allergyStatus.onChange(value);
 
@@ -145,7 +130,7 @@ export default function MedicalHistory() {
   }
 
   return (
-    <section className="flex flex-col gap-8 rounded-xl bg-surface-container-lowest p-5 shadow-sm sm:p-8">
+    <FormSection>
       <FormSectionHeader
         heading="Medical History"
         subheading="Health background"
@@ -159,7 +144,7 @@ export default function MedicalHistory() {
         noneLabel="None"
         onBlur={conditions.onBlur}
         onChange={(values) =>
-          selectExclusiveNone(values, conditions.value, conditions.onChange)
+          conditions.onChange(getExclusiveNoneValues(values, conditions.value))
         }
         options={conditionOptions}
         value={conditions.value}
@@ -173,10 +158,8 @@ export default function MedicalHistory() {
         noneLabel="None of the above"
         onBlur={recentSymptoms.onBlur}
         onChange={(values) =>
-          selectExclusiveNone(
-            values,
-            recentSymptoms.value,
-            recentSymptoms.onChange,
+          recentSymptoms.onChange(
+            getExclusiveNoneValues(values, recentSymptoms.value),
           )
         }
         options={recentSymptomOptions}
@@ -344,15 +327,15 @@ export default function MedicalHistory() {
         value={additionalNotes.value}
       >
         <Label className={questionLabelClassName}>
-          Is there anything else we should know about you that might impact
-          your health?
+          Is there anything else we should know about you that might impact your
+          health?
         </Label>
         <Text className={descriptionClassName} slot="description">
           Include dietary restrictions or major life changes.
         </Text>
         <TextArea className={textInputClassName} maxLength={1000} rows={4} />
       </TextField>
-    </section>
+    </FormSection>
   );
 }
 
@@ -402,85 +385,5 @@ function HistoryCheckboxGroup({
       </div>
       <FieldError className={errorClassName}>{error}</FieldError>
     </CheckboxGroup>
-  );
-}
-
-function RadioChoiceGroup({
-  error,
-  isInvalid,
-  label,
-  name,
-  onBlur,
-  onChange,
-  options,
-  value,
-}: {
-  error?: string;
-  isInvalid: boolean;
-  label: string;
-  name: string;
-  onBlur: () => void;
-  onChange: (value: string) => void;
-  options: Array<[string, string]>;
-  value: string;
-}) {
-  return (
-    <RadioGroup
-      className={questionClassName}
-      name={name}
-      onBlur={onBlur}
-      onChange={onChange}
-      value={value}
-      isInvalid={isInvalid}
-      isRequired
-    >
-      <Label className={questionLabelClassName}>
-        {label} <RequiredMark />
-      </Label>
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-        {options.map(([optionValue, optionLabel]) => (
-          <RadioField className="contents" key={optionValue} value={optionValue}>
-            <RadioButton className="cursor-pointer rounded-lg bg-surface-container-low px-4 py-3 text-center text-label-md font-medium text-on-surface outline-none transition-colors data-focus-visible:ring-3 data-focus-visible:ring-primary-fixed/60 data-hovered:bg-surface-container data-selected:bg-primary data-selected:font-semibold data-selected:text-on-primary data-selected:shadow-sm">
-              {optionLabel}
-            </RadioButton>
-          </RadioField>
-        ))}
-      </div>
-      <FieldError className={errorClassName}>{error}</FieldError>
-    </RadioGroup>
-  );
-}
-
-function ChoiceCheckbox({
-  children,
-  safe = false,
-  value,
-}: {
-  children: React.ReactNode;
-  safe?: boolean;
-  value: string;
-}) {
-  return (
-    <Checkbox
-      className={`group flex cursor-pointer items-center gap-3 rounded-lg p-3 text-label-md outline-none transition-colors data-focus-visible:ring-3 data-focus-visible:ring-primary-fixed/60 ${
-        safe
-          ? "bg-primary/10 font-semibold text-primary data-hovered:bg-primary/20"
-          : "bg-surface-container-low text-on-surface data-hovered:bg-surface-container"
-      }`}
-      value={value}
-    >
-      <span className="grid size-4 shrink-0 place-items-center rounded border border-outline bg-surface text-transparent transition group-data-selected:border-primary group-data-selected:bg-primary group-data-selected:text-on-primary">
-        <Check aria-hidden="true" className="size-3" strokeWidth={3} />
-      </span>
-      {children}
-    </Checkbox>
-  );
-}
-
-function RequiredMark() {
-  return (
-    <span aria-hidden="true" className="text-error">
-      *
-    </span>
   );
 }

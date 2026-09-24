@@ -1,19 +1,26 @@
 "use client";
 
 import type { ConsultationFormValues } from "@/components/book-consultation/consultation-form";
-import { Check, TrendingUp, TriangleAlert } from "lucide-react";
+import { TriangleAlert } from "lucide-react";
 import { useController, useFormContext } from "react-hook-form";
 import {
-  Checkbox,
   CheckboxGroup,
   FieldError,
   Label,
-  RadioButton,
-  RadioField,
-  RadioGroup,
   Text,
 } from "react-aria-components";
+import {
+  ChoiceCheckbox,
+  descriptionClassName,
+  errorClassName,
+  FormSection,
+  getExclusiveNoneValues,
+  questionClassName,
+  questionLabelClassName,
+  RadioChoiceGroup,
+} from "./FormControls";
 import FormSectionHeader from "./FormSectionHeader";
+import RequiredMark from "./RequiredMark";
 
 const trendOptions = [
   "Rapidly worsening",
@@ -43,11 +50,6 @@ const redFlagOptions = [
   ["fainting", "Fainting episodes"],
 ] as const;
 
-const questionClassName = "flex flex-col gap-3";
-const questionLabelClassName = "font-headline-md text-lg text-on-surface";
-const descriptionClassName = "text-label-md text-on-surface-variant";
-const errorClassName = "text-label-sm text-error";
-
 export default function CurrentIssueTrend() {
   const { control } = useFormContext<ConsultationFormValues>();
   const { field: trend, fieldState: trendState } = useController({
@@ -75,26 +77,19 @@ export default function CurrentIssueTrend() {
   });
 
   function handleRedFlagsChange(values: string[]) {
-    const selectedNone = values.includes("none");
-    const noneWasSelected = redFlags.value.includes("none");
-
-    if (selectedNone && !noneWasSelected) {
-      redFlags.onChange(["none"]);
-      return;
-    }
-
-    redFlags.onChange(values.filter((value) => value !== "none"));
+    redFlags.onChange(getExclusiveNoneValues(values, redFlags.value));
   }
 
   return (
-    <section className="flex flex-col gap-8 rounded-xl bg-surface-container-lowest p-5 shadow-sm sm:p-8">
+    <FormSection>
       <FormSectionHeader
         heading="Trend (Current Episode)"
         subheading="Symptoms & trends"
         helper="Describe how the current issue has changed since it began and compared with your recent health."
       />
 
-      <TrendRadioGroup
+      <RadioChoiceGroup
+        buttonClassName="flex items-center gap-2 px-3 text-left"
         description="Since the symptom began:"
         error={trendState.error?.message}
         label="1. What is the trend of the current issue you are facing?"
@@ -106,7 +101,8 @@ export default function CurrentIssueTrend() {
         isInvalid={trendState.invalid}
       />
 
-      <TrendRadioGroup
+      <RadioChoiceGroup
+        buttonClassName="flex items-center gap-2 px-3 text-left"
         description="How quickly is the issue changing? Change occurred over:"
         error={speedState.error?.message}
         label="Speed of Change"
@@ -118,7 +114,8 @@ export default function CurrentIssueTrend() {
         isInvalid={speedState.invalid}
       />
 
-      <TrendRadioGroup
+      <RadioChoiceGroup
+        buttonClassName="flex items-center gap-2 px-3 text-left"
         description="Compared to the last visit or recent weeks:"
         error={longitudinalState.error?.message}
         label="Longitudinal Trend"
@@ -155,11 +152,11 @@ export default function CurrentIssueTrend() {
 
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           {redFlagOptions.map(([value, label]) => (
-            <ChoiceCheckbox key={value} value={value}>
+            <ChoiceCheckbox key={value} value={value} surface="lowest">
               {label}
             </ChoiceCheckbox>
           ))}
-          <ChoiceCheckbox value="none" safe>
+          <ChoiceCheckbox value="none" safe surface="lowest">
             None
           </ChoiceCheckbox>
         </div>
@@ -167,91 +164,6 @@ export default function CurrentIssueTrend() {
           {redFlagsState.error?.message}
         </FieldError>
       </CheckboxGroup>
-    </section>
-  );
-}
-
-function TrendRadioGroup({
-  description,
-  error,
-  isInvalid,
-  label,
-  name,
-  onBlur,
-  onChange,
-  options,
-  value,
-}: {
-  description: string;
-  error?: string;
-  isInvalid: boolean;
-  label: string;
-  name: string;
-  onBlur: () => void;
-  onChange: (value: string) => void;
-  options: string[];
-  value: string;
-}) {
-  return (
-    <RadioGroup
-      className={questionClassName}
-      name={name}
-      onBlur={onBlur}
-      onChange={onChange}
-      value={value}
-      isInvalid={isInvalid}
-      isRequired
-    >
-      <Label className={questionLabelClassName}>
-        {label} <RequiredMark />
-      </Label>
-      <Text className={descriptionClassName} slot="description">
-        {description}
-      </Text>
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-        {options.map((option) => (
-          <RadioField className="contents" key={option} value={option}>
-            <RadioButton className="group flex cursor-pointer items-center gap-2 rounded-lg bg-surface-container-low px-3 py-3 text-label-md font-medium text-on-surface outline-none transition-colors data-focus-visible:ring-3 data-focus-visible:ring-primary-fixed/60 data-hovered:bg-surface-container data-selected:bg-primary data-selected:font-semibold data-selected:text-on-primary data-selected:shadow-sm">
-              {option}
-            </RadioButton>
-          </RadioField>
-        ))}
-      </div>
-      <FieldError className={errorClassName}>{error}</FieldError>
-    </RadioGroup>
-  );
-}
-
-function ChoiceCheckbox({
-  children,
-  safe = false,
-  value,
-}: {
-  children: React.ReactNode;
-  safe?: boolean;
-  value: string;
-}) {
-  return (
-    <Checkbox
-      className={`group flex cursor-pointer items-center gap-3 rounded-lg p-3 text-label-md outline-none transition-colors data-focus-visible:ring-3 data-focus-visible:ring-primary-fixed/60 ${
-        safe
-          ? "bg-primary/10 font-semibold text-primary data-hovered:bg-primary/20"
-          : "bg-surface-container-lowest text-on-surface data-hovered:bg-surface-container-high"
-      }`}
-      value={value}
-    >
-      <span className="grid size-4 shrink-0 place-items-center rounded border border-outline bg-surface text-transparent transition group-data-selected:border-primary group-data-selected:bg-primary group-data-selected:text-on-primary">
-        <Check aria-hidden="true" className="size-3" strokeWidth={3} />
-      </span>
-      {children}
-    </Checkbox>
-  );
-}
-
-function RequiredMark() {
-  return (
-    <span aria-hidden="true" className="text-error">
-      *
-    </span>
+    </FormSection>
   );
 }

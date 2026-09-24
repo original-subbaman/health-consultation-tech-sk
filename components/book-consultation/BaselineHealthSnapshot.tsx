@@ -4,6 +4,16 @@ import type { ConsultationFormValues } from "@/components/book-consultation/cons
 import { Check, CloudSun, TriangleAlert } from "lucide-react";
 import { useController, useFormContext } from "react-hook-form";
 import {
+  ChoiceCheckbox,
+  descriptionClassName,
+  errorClassName,
+  FormSection,
+  getExclusiveNoneValues,
+  questionLabelClassName,
+  textInputClassName,
+} from "./FormControls";
+import RequiredMark from "./RequiredMark";
+import {
   CheckboxButton,
   CheckboxField,
   CheckboxGroup,
@@ -66,12 +76,6 @@ const onsetOptions = [
   "Long-term / Chronic",
 ];
 
-const questionLabelClassName = "font-headline-md text-lg text-on-surface";
-const descriptionClassName = "text-label-md text-on-surface-variant";
-const textInputClassName =
-  "w-full rounded-lg bg-surface-container-low px-4 py-3 text-body-md text-on-surface outline-none transition-all placeholder:text-outline data-[focused]:bg-surface-container-lowest data-[focused]:shadow-md data-[focus-visible]:ring-3 data-[focus-visible]:ring-primary-fixed/60 data-[invalid]:ring-2 data-[invalid]:ring-error";
-const errorClassName = "text-label-sm text-error";
-
 export default function BaselineHealthSnapshot() {
   const { control } = useFormContext<ConsultationFormValues>();
   const { field: redFlags, fieldState: redFlagsState } = useController({
@@ -112,19 +116,11 @@ export default function BaselineHealthSnapshot() {
   });
 
   function handleRedFlagsChange(values: string[]) {
-    const selectedNone = values.includes("none");
-    const noneWasSelected = redFlags.value.includes("none");
-
-    if (selectedNone && !noneWasSelected) {
-      redFlags.onChange(["none"]);
-      return;
-    }
-
-    redFlags.onChange(values.filter((value) => value !== "none"));
+    redFlags.onChange(getExclusiveNoneValues(values, redFlags.value));
   }
 
   return (
-    <section className="flex flex-col gap-8 rounded-xl bg-surface-container-lowest p-5 shadow-sm sm:p-8">
+    <FormSection>
       <FormSectionHeader
         heading="Baseline Health Snapshot"
         subheading="Clinical assessment"
@@ -161,11 +157,11 @@ export default function BaselineHealthSnapshot() {
         </div>
         <div className="grid grid-cols-1 gap-2.5 pt-2 sm:grid-cols-2">
           {emergencySymptoms.map(([value, label]) => (
-            <ChoiceCheckbox key={value} value={value} variant="standard">
+            <ChoiceCheckbox key={value} value={value} surface="lowest">
               {label}
             </ChoiceCheckbox>
           ))}
-          <ChoiceCheckbox value="none" variant="safe">
+          <ChoiceCheckbox value="none" safe surface="lowest">
             None of these apply (safe to proceed)
           </ChoiceCheckbox>
         </div>
@@ -398,34 +394,7 @@ export default function BaselineHealthSnapshot() {
         onChange={(value) => pain.onChange(Number(value))}
         value={pain.value?.toString() ?? ""}
       />
-    </section>
-  );
-}
-
-function ChoiceCheckbox({
-  value,
-  variant,
-  children,
-}: {
-  value: string;
-  variant: "standard" | "safe";
-  children: React.ReactNode;
-}) {
-  return (
-    <CheckboxField value={value}>
-      <CheckboxButton
-        className={`group flex w-full cursor-pointer items-center gap-3 rounded-lg p-3 outline-none transition-colors data-focus-visible:ring-3 data-focus-visible:ring-primary-fixed/60 ${
-          variant === "safe"
-            ? "bg-primary/10 font-semibold text-primary data-hovered:bg-primary/20"
-            : "bg-surface-container-lowest text-on-surface data-hovered:bg-surface-container-high"
-        }`}
-      >
-        <span className="grid size-4 shrink-0 place-items-center rounded border border-outline bg-surface text-transparent transition group-data-selected:border-primary group-data-selected:bg-primary group-data-selected:text-on-primary">
-          <Check aria-hidden="true" className="size-3" strokeWidth={3} />
-        </span>
-        <span className="text-label-md">{children}</span>
-      </CheckboxButton>
-    </CheckboxField>
+    </FormSection>
   );
 }
 
@@ -480,13 +449,5 @@ function PainScale({
         </div>
       </div>
     </RadioGroup>
-  );
-}
-
-function RequiredMark() {
-  return (
-    <span aria-hidden="true" className="text-error">
-      *
-    </span>
   );
 }

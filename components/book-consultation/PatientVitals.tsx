@@ -3,6 +3,8 @@
 import type { ConsultationFormValues } from "@/components/book-consultation/consultation-form";
 import { HeartPulse, Scale } from "lucide-react";
 import { Controller, useFormContext } from "react-hook-form";
+import { errorClassName, FormSection } from "./FormControls";
+import RequiredMark from "./RequiredMark";
 import {
   FieldError,
   Input,
@@ -17,14 +19,13 @@ const labelClassName =
   "font-label-md text-label-md font-semibold text-on-surface";
 const inputClassName =
   "w-full rounded-lg border border-outline-variant bg-surface px-4 py-3 text-body-md text-on-surface outline-none transition placeholder:text-outline data-[focused]:border-primary data-[focused]:ring-3 data-[focused]:ring-primary-fixed/60 data-[invalid]:border-error data-[invalid]:ring-3 data-[invalid]:ring-error-container";
-const errorClassName = "text-label-sm text-error";
 const helperClassName = "text-label-sm text-on-surface-variant";
 
 export default function PatientVitals() {
   const { control } = useFormContext<ConsultationFormValues>();
 
   return (
-    <section className="flex flex-col gap-8 rounded-xl bg-surface-container-lowest p-5 shadow-sm sm:p-8">
+    <FormSection>
       <FormSectionHeader
         heading="Confirm your details and vitals"
         subheading="Patient information"
@@ -204,14 +205,6 @@ export default function PatientVitals() {
           />
         </div>
       </fieldset>
-    </section>
-  );
-}
-
-function RequiredMark() {
-  return (
-    <span aria-hidden="true" className="text-error">
-      *
-    </span>
+    </FormSection>
   );
 }
