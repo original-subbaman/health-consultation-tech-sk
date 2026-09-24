@@ -64,6 +64,19 @@ export const consultationIntakeSchema = z.object({
   pain: z.number().int().min(0).max(10).nullable(),
 });
 
+export const currentIssueTrendSchema = z.object({
+  consultationId: z.uuid("Invalid consultation ID."),
+  trend: z.string().trim().min(1, "Current issue trend is required."),
+  speedOfChange: z.string().trim().min(1, "Speed of change is required."),
+  longitudinalTrend: z
+    .string()
+    .trim()
+    .min(1, "Longitudinal trend is required."),
+  redFlagSymptoms: z.array(z.string().trim().min(1)).min(1, {
+    message: "Select any red flag symptoms that apply, or select none.",
+  }),
+});
+
 export type ConsultationStatus = z.infer<typeof consultationStatusSchema>;
 export type BookConsultationInput = z.infer<typeof bookConsultationSchema>;
 export type UpdateConsultationStatusInput = z.infer<
@@ -71,3 +84,4 @@ export type UpdateConsultationStatusInput = z.infer<
 >;
 export type PatientMeasurements = z.infer<typeof patientMeasurementsSchema>;
 export type ConsultationIntake = z.infer<typeof consultationIntakeSchema>;
+export type CurrentIssueTrend = z.infer<typeof currentIssueTrendSchema>;

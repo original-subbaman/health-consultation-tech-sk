@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import {
   type ConsultationIntake,
   consultationIntakeSchema,
+  type CurrentIssueTrend,
+  currentIssueTrendSchema,
   type PatientMeasurements,
   patientMeasurementsSchema,
 } from "@/lib/validation/consultation";
@@ -254,6 +256,82 @@ export async function saveConsultationIntakes(intake: ConsultationIntake) {
     return {
       success: false,
       message: "Baseline health snapshot could not be saved",
+    };
+  }
+}
+
+export async function saveCurrentIssueTrend(trend: CurrentIssueTrend) {
+  const patient = await requirePatient();
+  const validationResult = currentIssueTrendSchema.safeParse(trend);
+
+  if (!validationResult.success) {
+    return {
+      success: false,
+      message:
+        validationResult.error.issues[0]?.message ??
+        "Invalid current issue trend",
+    };
+  }
+
+  const validatedTrend = validationResult.data;
+
+  try {
+    const client = await createClient();
+    const { data: consultation, error: consultationError } = await client
+      .from("consultations")
+      .select("id")
+      .eq("id", validatedTrend.consultationId)
+      .eq("patient_id", patient.id)
+      .eq("status", "draft")
+      .maybeSingle();
+
+    if (consultationError || !consultation) {
+      return {
+        success: false,
+        message: "Invalid consultation",
+      };
+    }
+
+    const { data: intake, error } = await client
+      .from("consultation_intakes")
+      .update({
+        current_issue_trend: validatedTrend.trend,
+        speed_of_change: validatedTrend.speedOfChange,
+        longitudinal_trend: validatedTrend.longitudinalTrend,
+        red_flag_symptoms: validatedTrend.redFlagSymptoms,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("consultation_id", consultation.id)
+      .select("id")
+      .maybeSingle();
+
+    if (error || !intake) {
+      console.error("Failed to save current issue trend", {
+        consultationId: consultation.id,
+        patientId: patient.id,
+        error,
+      });
+
+      return {
+        success: false,
+        message: "Could not save the current issue trend",
+      };
+    }
+
+    return {
+      success: true,
+      message: "Current issue trend saved successfully",
+    };
+  } catch (error) {
+    console.error("Failed to save current issue trend", {
+      consultationId: validatedTrend.consultationId,
+      patientId: patient.id,
+      error,
+    });
+
+    return {
+      success: false,
+      message: "Current issue trend could not be saved",
     };
   }
 }

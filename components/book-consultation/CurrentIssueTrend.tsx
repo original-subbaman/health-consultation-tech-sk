@@ -60,12 +60,11 @@ export default function CurrentIssueTrend() {
     name: "currentIssueTrend.speedOfChange",
     rules: { required: "Select how quickly the issue is changing." },
   });
-  const { field: longitudinal, fieldState: longitudinalState } =
-    useController({
-      control,
-      name: "currentIssueTrend.longitudinalTrend",
-      rules: { required: "Select how this compares with recent weeks." },
-    });
+  const { field: longitudinal, fieldState: longitudinalState } = useController({
+    control,
+    name: "currentIssueTrend.longitudinalTrend",
+    rules: { required: "Select how this compares with recent weeks." },
+  });
   const { field: redFlags, fieldState: redFlagsState } = useController({
     control,
     name: "currentIssueTrend.redFlagSymptoms",
@@ -213,7 +212,6 @@ function TrendRadioGroup({
         {options.map((option) => (
           <RadioField className="contents" key={option} value={option}>
             <RadioButton className="group flex cursor-pointer items-center gap-2 rounded-lg bg-surface-container-low px-3 py-3 text-label-md font-medium text-on-surface outline-none transition-colors data-focus-visible:ring-3 data-focus-visible:ring-primary-fixed/60 data-hovered:bg-surface-container data-selected:bg-primary data-selected:font-semibold data-selected:text-on-primary data-selected:shadow-sm">
-              <TrendingUp aria-hidden="true" className="size-4 shrink-0" />
               {option}
             </RadioButton>
           </RadioField>

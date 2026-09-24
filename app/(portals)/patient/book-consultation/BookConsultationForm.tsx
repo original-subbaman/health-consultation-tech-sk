@@ -50,6 +50,12 @@ const stepFields: Partial<Record<number, FieldPath<ConsultationFormValues>[]>> =
       "baseline.onset",
       "baseline.pain",
     ],
+    3: [
+      "currentIssueTrend.trend",
+      "currentIssueTrend.speedOfChange",
+      "currentIssueTrend.longitudinalTrend",
+      "currentIssueTrend.redFlagSymptoms",
+    ],
   };
 
 function HeadingSection({ currentStep }: { currentStep: number }) {

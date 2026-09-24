@@ -2,6 +2,7 @@
 
 import {
   saveConsultationIntakes,
+  saveCurrentIssueTrend,
   savePatientVitals,
 } from "@/actions/consultations";
 import type { ConsultationFormValues } from "@/components/book-consultation/consultation-form";
@@ -34,6 +35,11 @@ export function useConsultationStepSavers({
       2: () =>
         saveConsultationIntakes({
           ...getValues("baseline"),
+          consultationId,
+        }),
+      3: () =>
+        saveCurrentIssueTrend({
+          ...getValues("currentIssueTrend"),
           consultationId,
         }),
     }),
