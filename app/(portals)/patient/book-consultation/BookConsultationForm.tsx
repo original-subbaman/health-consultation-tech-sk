@@ -20,6 +20,7 @@ import { useCallback, useEffect } from "react";
 import { FieldPath, FormProvider, useForm } from "react-hook-form";
 import { GetConsultationFormValuesResult } from "@/lib/data/consultation";
 import { useSearchParams } from "next/navigation";
+import LifestyleSignals from "@/components/book-consultation/LifestyleSignals";
 
 const steps = [
   ["Patient Information", "Patient Vitals & Measurements"],
@@ -153,6 +154,7 @@ const STEP_PARAMS = [
   "intakes",
   "symptomsTrends",
   "history",
+  "lifestyle",
   "review",
 ] as const;
 
@@ -244,6 +246,7 @@ export default function BookConsultationForm({
           {currentStep === 2 && <BaselineHealthSnapshot />}
           {currentStep === 3 && <CurrentIssueTrend />}
           {currentStep === 4 && <MedicalHistory />}
+          {currentStep === 5 && <LifestyleSignals />}
 
           <div className="flex flex-col items-center justify-between gap-4 py-4 sm:flex-row">
             <NavigationArrowButton
