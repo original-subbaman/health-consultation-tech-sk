@@ -1,17 +1,11 @@
 "use client";
 
 import type { ConsultationFormValues } from "@/components/book-consultation/consultation-form";
-import {
-  Activity,
-  BatteryLow,
-  Bed,
-  Check,
-  CloudSun,
-  TriangleAlert,
-} from "lucide-react";
+import { Check, CloudSun, TriangleAlert } from "lucide-react";
 import { useController, useFormContext } from "react-hook-form";
 import {
-  Checkbox,
+  CheckboxButton,
+  CheckboxField,
   CheckboxGroup,
   FieldError,
   Input,
@@ -62,7 +56,6 @@ const symptomFactors = [
   "Sleep Problem",
   "Mood Concern",
   "Follow-up Known",
-  "Other unspecified symptom…",
 ];
 
 const onsetOptions = [
@@ -85,6 +78,8 @@ export default function BaselineHealthSnapshot() {
     control,
     name: "baseline.redFlags",
   });
+  const { field: redFlagsOther, fieldState: redFlagsOtherState } =
+    useController({ control, name: "baseline.redFlagsOther" });
   const { field: chiefComplaint, fieldState: chiefComplaintState } =
     useController({ control, name: "baseline.chiefComplaint" });
   const { field: primaryConcern, fieldState: primaryConcernState } =
@@ -92,6 +87,10 @@ export default function BaselineHealthSnapshot() {
   const { field: goals, fieldState: goalsState } = useController({
     control,
     name: "baseline.goals",
+  });
+  const { field: goalsOther, fieldState: goalsOtherState } = useController({
+    control,
+    name: "baseline.goalsOther",
   });
   const { field: usualHealth, fieldState: usualHealthState } = useController({
     control,
@@ -101,6 +100,8 @@ export default function BaselineHealthSnapshot() {
     control,
     name: "baseline.symptoms",
   });
+  const { field: symptomsOther, fieldState: symptomsOtherState } =
+    useController({ control, name: "baseline.symptomsOther" });
   const { field: onset, fieldState: onsetState } = useController({
     control,
     name: "baseline.onset",
@@ -123,9 +124,7 @@ export default function BaselineHealthSnapshot() {
   }
 
   return (
-    <section
-      className="flex flex-col gap-8 rounded-xl bg-surface-container-lowest p-5 shadow-sm sm:p-8"
-    >
+    <section className="flex flex-col gap-8 rounded-xl bg-surface-container-lowest p-5 shadow-sm sm:p-8">
       <FormSectionHeader
         heading="Baseline Health Snapshot"
         subheading="Clinical assessment"
@@ -170,6 +169,24 @@ export default function BaselineHealthSnapshot() {
             None of these apply (safe to proceed)
           </ChoiceCheckbox>
         </div>
+        <TextField
+          className="flex flex-col gap-2"
+          name={redFlagsOther.name}
+          onBlur={redFlagsOther.onBlur}
+          onChange={redFlagsOther.onChange}
+          value={redFlagsOther.value}
+          isInvalid={redFlagsOtherState.invalid}
+        >
+          <Label className="text-label-md font-medium text-on-error-container">
+            Other urgent symptoms not listed above
+          </Label>
+          <Input
+            className={textInputClassName}
+            maxLength={500}
+            placeholder="Enter any other urgent symptoms"
+          />
+          <FieldError className={errorClassName} />
+        </TextField>
         <FieldError className={errorClassName} />
       </CheckboxGroup>
 
@@ -237,19 +254,35 @@ export default function BaselineHealthSnapshot() {
         </Text>
         <div className="flex flex-wrap gap-2.5">
           {visitGoals.map((goal) => (
-            <Checkbox
-              className="group inline-flex cursor-pointer items-center gap-2 rounded-full bg-surface-container-high px-4 py-2.5 text-label-md font-medium text-on-surface shadow-sm outline-none transition data-[focus-visible]:ring-3 data-[focus-visible]:ring-primary-fixed/60 data-[hovered]:bg-surface-container data-[selected]:bg-primary data-[selected]:text-on-primary"
-              key={goal}
-              value={goal}
-            >
-              <Check
-                aria-hidden="true"
-                className="size-4 opacity-0 group-data-[selected]:opacity-100"
-              />
-              {goal}
-            </Checkbox>
+            <CheckboxField className="contents" key={goal} value={goal}>
+              <CheckboxButton className="group inline-flex cursor-pointer items-center gap-2 rounded-full bg-surface-container-high px-4 py-2.5 text-label-md font-medium text-on-surface shadow-sm outline-none transition data-[focus-visible]:ring-3 data-[focus-visible]:ring-primary-fixed/60 data-[hovered]:bg-surface-container data-[selected]:bg-primary data-[selected]:text-on-primary">
+                <Check
+                  aria-hidden="true"
+                  className="size-4 opacity-0 group-data-selected:opacity-100"
+                />
+                {goal}
+              </CheckboxButton>
+            </CheckboxField>
           ))}
         </div>
+        <TextField
+          className="mt-2 flex flex-col gap-2"
+          name={goalsOther.name}
+          onBlur={goalsOther.onBlur}
+          onChange={goalsOther.onChange}
+          value={goalsOther.value}
+          isInvalid={goalsOtherState.invalid}
+        >
+          <Label className="text-label-md font-medium text-on-surface">
+            Other consultation goal
+          </Label>
+          <Input
+            className={textInputClassName}
+            maxLength={500}
+            placeholder="Describe what else you hope to get from this visit"
+          />
+          <FieldError className={errorClassName} />
+        </TextField>
         <FieldError className={errorClassName} />
       </CheckboxGroup>
 
@@ -273,10 +306,10 @@ export default function BaselineHealthSnapshot() {
               <RadioButton className="group flex cursor-pointer flex-col rounded-xl bg-surface-container-low p-4 text-on-surface outline-none transition-colors data-[focus-visible]:ring-3 data-[focus-visible]:ring-primary-fixed/60 data-[hovered]:bg-surface-container data-[selected]:bg-primary data-selected:text-on-primary data-selected:shadow-md">
                 <CloudSun
                   aria-hidden="true"
-                  className="mb-2 size-6 text-outline group-data-[selected]:text-primary-fixed"
+                  className="mb-2 size-6 text-outline group-data-selected:text-primary-fixed"
                 />
                 <span className="text-label-md font-bold">{title}</span>
-                <span className="mt-0.5 text-label-sm text-outline group-data-[selected]:text-on-primary-container">
+                <span className="mt-0.5 text-label-sm text-outline group-data-selected:text-on-primary-container">
                   {detail}
                 </span>
               </RadioButton>
@@ -301,29 +334,36 @@ export default function BaselineHealthSnapshot() {
         </Text>
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4">
           {symptomFactors.map((symptom) => (
-            <Checkbox
-              className={`group flex cursor-pointer items-center gap-2.5 rounded-lg bg-surface-container-low p-3 text-label-md text-on-surface outline-none transition-colors data-focus-visible:ring-3 data-focus-visible:ring-primary-fixed/60 data-hovered:bg-surface-container data-selected:bg-primary data-selected:font-medium data-selected:text-on-primary data-selected:shadow-sm ${
-                symptom.startsWith("Other") ? "col-span-2" : ""
-              }`}
-              key={symptom}
-              value={symptom}
-            >
-              {symptom.startsWith("Fatigue") ? (
-                <BatteryLow aria-hidden="true" className="size-5" />
-              ) : symptom.startsWith("Sleep") ? (
-                <Bed aria-hidden="true" className="size-5" />
-              ) : (
-                <Activity aria-hidden="true" className="size-5" />
-              )}
-              {symptom}
-              {symptom === "Pain" && (
-                <span className="hidden group-data-selected:inline">
-                  (Selected)
-                </span>
-              )}
-            </Checkbox>
+            <CheckboxField key={symptom} value={symptom}>
+              <CheckboxButton className="group flex w-full cursor-pointer items-center gap-2.5 rounded-lg bg-surface-container-low p-3 text-label-md text-on-surface outline-none transition-colors data-focus-visible:ring-3 data-focus-visible:ring-primary-fixed/60 data-hovered:bg-surface-container data-selected:bg-primary data-selected:font-medium data-selected:text-on-primary data-selected:shadow-sm">
+                {symptom}
+                {symptom === "Pain" && (
+                  <span className="hidden group-data-selected:inline">
+                    (Selected)
+                  </span>
+                )}
+              </CheckboxButton>
+            </CheckboxField>
           ))}
         </div>
+        <TextField
+          className="mt-2 flex flex-col gap-2"
+          name={symptomsOther.name}
+          onBlur={symptomsOther.onBlur}
+          onChange={symptomsOther.onChange}
+          value={symptomsOther.value}
+          isInvalid={symptomsOtherState.invalid}
+        >
+          <Label className="text-label-md font-medium text-on-surface">
+            Other symptoms not listed above
+          </Label>
+          <Input
+            className={textInputClassName}
+            maxLength={500}
+            placeholder="Enter any other symptoms"
+          />
+          <FieldError className={errorClassName} />
+        </TextField>
       </CheckboxGroup>
 
       <RadioGroup
@@ -372,19 +412,20 @@ function ChoiceCheckbox({
   children: React.ReactNode;
 }) {
   return (
-    <Checkbox
-      className={`group flex cursor-pointer items-center gap-3 rounded-lg p-3 outline-none transition-colors data-focus-visible:ring-3 data-focus-visible:ring-primary-fixed/60 ${
-        variant === "safe"
-          ? "bg-primary/10 font-semibold text-primary data-hovered:bg-primary/20"
-          : "bg-surface-container-lowest text-on-surface data-hovered:bg-surface-container-high"
-      }`}
-      value={value}
-    >
-      <span className="grid size-4 shrink-0 place-items-center rounded border border-outline bg-surface text-transparent transition group-data-selected:border-primary group-data-selected:bg-primary group-data-selected:text-on-primary">
-        <Check aria-hidden="true" className="size-3" strokeWidth={3} />
-      </span>
-      <span className="text-label-md">{children}</span>
-    </Checkbox>
+    <CheckboxField value={value}>
+      <CheckboxButton
+        className={`group flex w-full cursor-pointer items-center gap-3 rounded-lg p-3 outline-none transition-colors data-focus-visible:ring-3 data-focus-visible:ring-primary-fixed/60 ${
+          variant === "safe"
+            ? "bg-primary/10 font-semibold text-primary data-hovered:bg-primary/20"
+            : "bg-surface-container-lowest text-on-surface data-hovered:bg-surface-container-high"
+        }`}
+      >
+        <span className="grid size-4 shrink-0 place-items-center rounded border border-outline bg-surface text-transparent transition group-data-selected:border-primary group-data-selected:bg-primary group-data-selected:text-on-primary">
+          <Check aria-hidden="true" className="size-3" strokeWidth={3} />
+        </span>
+        <span className="text-label-md">{children}</span>
+      </CheckboxButton>
+    </CheckboxField>
   );
 }
 

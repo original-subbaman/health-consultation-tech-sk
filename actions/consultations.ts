@@ -4,6 +4,8 @@ import type { Tables } from "@/database.types";
 import { requirePatient } from "@/lib/auth/auth";
 import { createClient } from "@/lib/supabase/server";
 import {
+  type ConsultationIntake,
+  consultationIntakeSchema,
   type PatientMeasurements,
   patientMeasurementsSchema,
 } from "@/lib/validation/consultation";
@@ -170,6 +172,88 @@ export async function savePatientVitals(vitals: PatientMeasurements) {
     return {
       success: false,
       message: "Vital measurements could not be saved",
+    };
+  }
+}
+
+export async function saveConsultationIntakes(intake: ConsultationIntake) {
+  const patient = await requirePatient();
+  const validationResult = consultationIntakeSchema.safeParse(intake);
+
+  if (!validationResult.success) {
+    return {
+      success: false,
+      message:
+        validationResult.error.issues[0]?.message ??
+        "Invalid consultation intake",
+    };
+  }
+
+  const validatedIntake = validationResult.data;
+
+  try {
+    const client = await createClient();
+    const { data: consultation, error: consultationError } = await client
+      .from("consultations")
+      .select("id")
+      .eq("id", validatedIntake.consultationId)
+      .eq("patient_id", patient.id)
+      .eq("status", "draft")
+      .maybeSingle();
+
+    if (consultationError || !consultation) {
+      return {
+        success: false,
+        message: "Invalid consultation",
+      };
+    }
+
+    const { error } = await client.from("consultation_intakes").upsert(
+      {
+        consultation_id: consultation.id,
+        emergency_symptoms: validatedIntake.redFlags,
+        emergency_symptoms_other: validatedIntake.redFlagsOther || null,
+        chief_complaint: validatedIntake.chiefComplaint,
+        primary_concern: validatedIntake.primaryConcern,
+        consultation_goals: validatedIntake.goals,
+        consultation_goal_other: validatedIntake.goalsOther || null,
+        general_health_today: validatedIntake.usualHealth || null,
+        current_symptoms: validatedIntake.symptoms,
+        current_symptoms_other: validatedIntake.symptomsOther || null,
+        symptom_onset: validatedIntake.onset || null,
+        discomfort_severity: validatedIntake.pain,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "consultation_id" },
+    );
+
+    if (error) {
+      console.error("Failed to save consultation intake", {
+        consultationId: consultation.id,
+        patientId: patient.id,
+        error,
+      });
+
+      return {
+        success: false,
+        message: "Could not save the baseline health snapshot",
+      };
+    }
+
+    return {
+      success: true,
+      message: "Baseline health snapshot saved successfully",
+    };
+  } catch (error) {
+    console.error("Failed to save consultation intake", {
+      consultationId: validatedIntake.consultationId,
+      patientId: patient.id,
+      error,
+    });
+
+    return {
+      success: false,
+      message: "Baseline health snapshot could not be saved",
     };
   }
 }

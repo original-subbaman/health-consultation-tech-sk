@@ -1,6 +1,9 @@
 "use client";
 
-import { savePatientVitals } from "@/actions/consultations";
+import {
+  saveConsultationIntakes,
+  savePatientVitals,
+} from "@/actions/consultations";
 import type { ConsultationFormValues } from "@/components/book-consultation/consultation-form";
 import { useCallback, useMemo, useState } from "react";
 import type { UseFormGetValues } from "react-hook-form";
@@ -26,6 +29,11 @@ export function useConsultationStepSavers({
       1: () =>
         savePatientVitals({
           ...getValues("patient"),
+          consultationId,
+        }),
+      2: () =>
+        saveConsultationIntakes({
+          ...getValues("baseline"),
           consultationId,
         }),
     }),

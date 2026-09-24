@@ -39,9 +39,11 @@ const stepFields: Partial<Record<number, FieldPath<ConsultationFormValues>[]>> =
     ],
     2: [
       "baseline.redFlags",
+      "baseline.redFlagsOther",
       "baseline.chiefComplaint",
       "baseline.primaryConcern",
       "baseline.goals",
+      "baseline.goalsOther",
       "baseline.usualHealth",
       "baseline.symptoms",
       "baseline.symptomsOther",

@@ -7,11 +7,14 @@ export type ConsultationFormValues = {
   };
   baseline: {
     redFlags: string[];
+    redFlagsOther: string;
     chiefComplaint: string;
     primaryConcern: string;
     goals: string[];
+    goalsOther: string;
     usualHealth: string;
     symptoms: string[];
+    symptomsOther: string;
     onset: string;
     pain: number | null;
   };
@@ -46,14 +49,15 @@ export const consultationFormDefaultValues: ConsultationFormValues = {
   },
   baseline: {
     redFlags: ["none"],
-    chiefComplaint:
-      "Persistent throbbing headache in right frontal region for 3 days, worsening in afternoon. Accompanied by mild neck tightness and sensitivity to bright office light. No vision blur or aura noted.",
-    primaryConcern:
-      "It hasn't subsided with OTC acetaminophen and is disrupting my workday focus.",
-    goals: ["Diagnosis", "Treatment / Prescription"],
-    usualHealth: "Slightly worse",
-    symptoms: ["Pain", "Fatigue / Energy", "Sleep Problem"],
-    onset: "1–3 days ago",
+    redFlagsOther: "",
+    chiefComplaint: "",
+    primaryConcern: "",
+    goals: [],
+    goalsOther: "",
+    usualHealth: "",
+    symptoms: [],
+    symptomsOther: "",
+    onset: "",
     pain: 5,
   },
   currentIssueTrend: {
