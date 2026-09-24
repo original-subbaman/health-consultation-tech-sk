@@ -15,11 +15,11 @@ import {
   Check,
   CircleHelp,
   LoaderCircle,
-  Save,
 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect } from "react";
 import { FieldPath, FormProvider, useForm } from "react-hook-form";
 import { GetConsultationFormValuesResult } from "@/lib/data/consultation";
+import { useSearchParams } from "next/navigation";
 
 const steps = [
   ["Patient Information", "Patient Vitals & Measurements"],
@@ -37,7 +37,116 @@ const stepFields: Partial<Record<number, FieldPath<ConsultationFormValues>[]>> =
       "patient.measuredAt",
       "patient.weightKg",
     ],
+    2: [
+      "baseline.redFlags",
+      "baseline.chiefComplaint",
+      "baseline.primaryConcern",
+      "baseline.goals",
+      "baseline.usualHealth",
+      "baseline.symptoms",
+      "baseline.symptomsOther",
+      "baseline.onset",
+      "baseline.pain",
+    ],
   };
+
+function HeadingSection({ currentStep }: { currentStep: number }) {
+  return (
+    <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+      <div>
+        <div className="mb-1 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center rounded-full bg-primary-container/15 px-2.5 py-0.5 text-label-sm font-semibold text-primary">
+            Step {currentStep} of 5 • In focus
+          </span>
+        </div>
+        <h1 className="font-headline-md text-headline-md tracking-tight text-on-surface">
+          Problem Oriented Medical Record Intake & Triage
+        </h1>
+      </div>
+
+      <div className="flex min-w-60 items-center gap-4">
+        <div className="flex flex-1 flex-col gap-1.5">
+          <div className="flex items-center justify-between text-label-sm">
+            <span className="font-medium text-on-surface-variant">
+              Session progress
+            </span>
+            <span className="font-bold text-primary">45%</span>
+          </div>
+          <div
+            aria-label="Session progress: 45%"
+            aria-valuemax={100}
+            aria-valuemin={0}
+            aria-valuenow={45}
+            className="h-2 w-full overflow-hidden rounded-full bg-surface-container-high"
+            role="progressbar"
+          >
+            <div className="h-full w-[45%] rounded-full bg-primary" />
+          </div>
+        </div>
+        <button
+          className="hidden items-center gap-1 rounded-lg bg-surface-container px-3 py-1.5 text-label-sm text-on-surface-variant transition-colors hover:text-on-surface lg:inline-flex"
+          type="button"
+        >
+          <CircleHelp aria-hidden="true" className="size-4" />
+          Intake guide
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ConsultationStepper({ currentStep }: { currentStep: number }) {
+  return (
+    <ol className="grid grid-cols-2 gap-2 pt-2 sm:grid-cols-3 lg:grid-cols-5">
+      {steps.map(([title, subtitle], index) => {
+        const complete = index === 0;
+        const active = index === currentStep - 1;
+
+        return (
+          <li
+            aria-current={active ? "step" : undefined}
+            className={`flex items-center gap-3 rounded-lg p-2.5 ${
+              active
+                ? "bg-primary-container text-on-primary shadow-sm"
+                : "bg-surface-container-low/60 text-on-surface"
+            } ${index === 3 ? "hidden sm:flex" : ""} ${index === 4 ? "hidden lg:flex" : ""}`}
+            key={title}
+          >
+            <span
+              className={`grid size-8 shrink-0 place-items-center rounded-full ${active ? "bg-on-primary text-primary" : complete ? "bg-primary text-on-primary" : "bg-surface-container-highest text-tertiary"}`}
+            >
+              {complete ? (
+                <Check aria-hidden="true" className="size-4" />
+              ) : (
+                <span className="text-label-md font-bold">{index + 1}</span>
+              )}
+            </span>
+            <span className="min-w-0">
+              <span
+                className={`block truncate text-label-sm font-semibold ${active ? "text-on-primary" : complete ? "text-primary" : "text-on-surface"}`}
+              >
+                {index + 1}. {title}
+              </span>
+              <span
+                className={`block truncate text-label-sm ${active ? "text-on-primary-container" : "text-outline"}`}
+              >
+                {subtitle}
+              </span>
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+const STEP_PARAMS = [
+  "patientVital",
+  "intakes",
+  "symptomsTrends",
+  "history",
+  "review",
+] as const;
 
 export default function BookConsultationForm({
   consultationId,
@@ -46,7 +155,11 @@ export default function BookConsultationForm({
   consultationId: string;
   formValues: GetConsultationFormValuesResult;
 }) {
-  const [currentStep, setCurrentStep] = useState(1);
+  const searchParams = useSearchParams();
+  const stepIndex = STEP_PARAMS.findIndex(
+    (step) => step === searchParams.get("step"),
+  );
+  const currentStep = stepIndex === -1 ? 1 : stepIndex + 1;
   const form = useForm<ConsultationFormValues>({
     defaultValues: formValues.success
       ? formValues.values
@@ -59,8 +172,31 @@ export default function BookConsultationForm({
     getValues: form.getValues,
   });
 
+  const navigateToStep = useCallback(
+    (nextStep: number) => {
+      const normalizedStep = Math.min(
+        STEP_PARAMS.length,
+        Math.max(1, nextStep),
+      );
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("step", STEP_PARAMS[normalizedStep - 1]);
+      window.history.pushState(null, "", `?${params.toString()}`);
+    },
+    [searchParams],
+  );
+
+  useEffect(() => {
+    if (stepIndex !== -1) {
+      return;
+    }
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("step", STEP_PARAMS[0]);
+    window.history.replaceState(null, "", `?${params.toString()}`);
+  }, [searchParams, stepIndex]);
+
   function handlePreviousStep() {
-    setCurrentStep((prev) => Math.max(1, prev - 1));
+    navigateToStep(currentStep - 1);
   }
 
   async function handleNextStep() {
@@ -83,95 +219,15 @@ export default function BookConsultationForm({
       return;
     }
 
-    setCurrentStep((prev) => Math.min(5, prev + 1));
+    navigateToStep(currentStep + 1);
   }
   return (
     <FormProvider {...form}>
       <div className="flex w-full flex-col gap-8">
         <section className="rounded-xl bg-surface-container-lowest p-5 shadow-sm sm:p-6">
           <div className="flex flex-col gap-5">
-            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-              <div>
-                <div className="mb-1 flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center rounded-full bg-primary-container/15 px-2.5 py-0.5 text-label-sm font-semibold text-primary">
-                    Step {currentStep} of 5 • In focus
-                  </span>
-                </div>
-                <h1 className="font-headline-md text-headline-md tracking-tight text-on-surface">
-                  Problem Oriented Medical Record Intake & Triage
-                </h1>
-              </div>
-
-              <div className="flex min-w-60 items-center gap-4">
-                <div className="flex flex-1 flex-col gap-1.5">
-                  <div className="flex items-center justify-between text-label-sm">
-                    <span className="font-medium text-on-surface-variant">
-                      Session progress
-                    </span>
-                    <span className="font-bold text-primary">45%</span>
-                  </div>
-                  <div
-                    aria-label="Session progress: 45%"
-                    aria-valuemax={100}
-                    aria-valuemin={0}
-                    aria-valuenow={45}
-                    className="h-2 w-full overflow-hidden rounded-full bg-surface-container-high"
-                    role="progressbar"
-                  >
-                    <div className="h-full w-[45%] rounded-full bg-primary" />
-                  </div>
-                </div>
-                <button
-                  className="hidden items-center gap-1 rounded-lg bg-surface-container px-3 py-1.5 text-label-sm text-on-surface-variant transition-colors hover:text-on-surface lg:inline-flex"
-                  type="button"
-                >
-                  <CircleHelp aria-hidden="true" className="size-4" />
-                  Intake guide
-                </button>
-              </div>
-            </div>
-
-            <ol className="grid grid-cols-2 gap-2 pt-2 sm:grid-cols-3 lg:grid-cols-5">
-              {steps.map(([title, subtitle], index) => {
-                const complete = index === 0;
-                const active = index === currentStep - 1;
-                return (
-                  <li
-                    aria-current={active ? "step" : undefined}
-                    className={`flex items-center gap-3 rounded-lg p-2.5 ${
-                      active
-                        ? "bg-primary-container text-on-primary shadow-sm"
-                        : "bg-surface-container-low/60 text-on-surface"
-                    } ${index === 3 ? "hidden sm:flex" : ""} ${index === 4 ? "hidden lg:flex" : ""}`}
-                    key={title}
-                  >
-                    <span
-                      className={`grid size-8 shrink-0 place-items-center rounded-full ${active ? "bg-on-primary text-primary" : complete ? "bg-primary text-on-primary" : "bg-surface-container-highest text-tertiary"}`}
-                    >
-                      {complete ? (
-                        <Check aria-hidden="true" className="size-4" />
-                      ) : (
-                        <span className="text-label-md font-bold">
-                          {index + 1}
-                        </span>
-                      )}
-                    </span>
-                    <span className="min-w-0">
-                      <span
-                        className={`block truncate text-label-sm font-semibold ${active ? "text-on-primary" : complete ? "text-primary" : "text-on-surface"}`}
-                      >
-                        {index + 1}. {title}
-                      </span>
-                      <span
-                        className={`block truncate text-label-sm ${active ? "text-on-primary-container" : "text-outline"}`}
-                      >
-                        {subtitle}
-                      </span>
-                    </span>
-                  </li>
-                );
-              })}
-            </ol>
+            <HeadingSection currentStep={currentStep} />
+            <ConsultationStepper currentStep={currentStep} />
           </div>
         </section>
 
@@ -190,22 +246,13 @@ export default function BookConsultationForm({
               type="button"
             />
 
-            <div className="flex w-full items-center gap-3 sm:w-auto">
-              <button
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-surface-container-low px-4 py-3 text-label-md font-medium text-on-surface transition-colors hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={isSaving}
-                type="button"
-              >
-                <Save aria-hidden="true" className="size-4" /> Save draft
-              </button>
-              <NavigationArrowButton
-                label="Next Step"
-                direction="right"
-                isLoading={isSaving}
-                onClick={handleNextStep}
-                type="button"
-              />
-            </div>
+            <NavigationArrowButton
+              label="Next Step"
+              direction="right"
+              isLoading={isSaving}
+              onClick={handleNextStep}
+              type="button"
+            />
           </div>
           {saveError && (
             <p className="text-label-md text-error" role="alert">
