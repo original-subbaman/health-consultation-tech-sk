@@ -98,6 +98,23 @@ export async function getConsultationFormValues(
             diastolic_bp,
             measured_at,
             weight_kg
+          ),
+          consultation_intakes (
+            emergency_symptoms,
+            emergency_symptoms_other,
+            chief_complaint,
+            primary_concern,
+            consultation_goals,
+            consultation_goal_other,
+            general_health_today,
+            current_symptoms,
+            current_symptoms_other,
+            symptom_onset,
+            discomfort_severity,
+            current_issue_trend,
+            speed_of_change,
+            longitudinal_trend,
+            red_flag_symptoms
           )
         `,
       )
@@ -114,6 +131,7 @@ export async function getConsultationFormValues(
     }
 
     const measurement = consultation.patient_measurements[0];
+    const intake = consultation.consultation_intakes;
 
     return {
       success: true,
@@ -126,6 +144,31 @@ export async function getConsultationFormValues(
             ? measurement.measured_at.slice(0, 10)
             : null,
           weightKg: measurement?.weight_kg ?? null,
+        },
+        baseline: {
+          redFlags:
+            intake?.emergency_symptoms ??
+            consultationFormDefaultValues.baseline.redFlags,
+          redFlagsOther: intake?.emergency_symptoms_other ?? "",
+          chiefComplaint: intake?.chief_complaint ?? "",
+          primaryConcern: intake?.primary_concern ?? "",
+          goals: intake?.consultation_goals ?? [],
+          goalsOther: intake?.consultation_goal_other ?? "",
+          usualHealth: intake?.general_health_today ?? "",
+          symptoms: intake?.current_symptoms ?? [],
+          symptomsOther: intake?.current_symptoms_other ?? "",
+          onset: intake?.symptom_onset ?? "",
+          pain:
+            intake?.discomfort_severity ??
+            consultationFormDefaultValues.baseline.pain,
+        },
+        currentIssueTrend: {
+          trend: intake?.current_issue_trend ?? "",
+          speedOfChange: intake?.speed_of_change ?? "",
+          longitudinalTrend: intake?.longitudinal_trend ?? "",
+          redFlagSymptoms:
+            intake?.red_flag_symptoms ??
+            consultationFormDefaultValues.currentIssueTrend.redFlagSymptoms,
         },
       },
     };
