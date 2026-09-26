@@ -1,3 +1,42 @@
+import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
+
+async function getDashboardHref() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return null;
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profileError) {
+    console.error("Failed to load the landing-page profile", {
+      userId: user.id,
+      error: profileError,
+    });
+    return null;
+  }
+
+  if (profile?.role === "patient") {
+    return "/patient/dashboard";
+  }
+
+  if (profile?.role === "admin") {
+    return "/admin/dashboard";
+  }
+
+  return null;
+}
+
 const CalendarIcon = () => (
   <svg
     aria-hidden="true"
@@ -50,7 +89,8 @@ const MessageIcon = () => (
   </svg>
 );
 
-export default function Home() {
+export default async function Home() {
+  const dashboardHref = await getDashboardHref();
   const steps = [
     {
       icon: <CalendarIcon />,
@@ -82,12 +122,12 @@ export default function Home() {
           </span>
           <span>Serene Health</span>
         </a>
-        <a
-          href="/patient/login"
+        <Link
+          href={dashboardHref ?? "/patient/login"}
           className="rounded-lg border border-primary px-4 py-2.5 text-label-md text-primary transition hover:-translate-y-0.5 hover:bg-primary-fixed/40"
         >
-          Sign in
-        </a>
+          {dashboardHref ? "Go to dashboard" : "Sign in"}
+        </Link>
       </nav>
 
       <section className="mx-auto grid max-w-7xl gap-10 px-4 pb-12 pt-12 sm:px-8 md:pt-20 lg:grid-cols-[1.05fr_.95fr] lg:items-center lg:px-16 lg:pb-20">
