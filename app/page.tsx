@@ -1,5 +1,5 @@
+import LandingNavigationButton from "@/components/landing/LandingNavigationButton";
 import { createClient } from "@/lib/supabase/server";
-import Link from "next/link";
 
 async function getDashboardHref() {
   const supabase = await createClient();
@@ -111,87 +111,98 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-background text-on-background">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-8 lg:px-16">
-        <a
-          href="#"
-          className="flex items-center gap-3 font-semibold tracking-tight text-on-surface"
-          aria-label="Serene Health home"
-        >
-          <span className="grid size-10 place-items-center rounded-md bg-primary text-xl text-on-primary">
-            +
-          </span>
-          <span>Serene Health</span>
-        </a>
-        <Link
-          href={dashboardHref ?? "/patient/login"}
-          className="rounded-lg border border-primary px-4 py-2.5 text-label-md text-primary transition hover:-translate-y-0.5 hover:bg-primary-fixed/40"
-        >
-          {dashboardHref ? "Go to dashboard" : "Sign in"}
-        </Link>
-      </nav>
-
-      <section className="mx-auto grid max-w-7xl gap-10 px-4 pb-12 pt-12 sm:px-8 md:pt-20 lg:grid-cols-[1.05fr_.95fr] lg:items-center lg:px-16 lg:pb-20">
-        <div>
-          <span className="inline-flex rounded-full bg-primary-fixed px-4 py-2 text-label-sm text-on-primary-fixed-variant">
-            CARE THAT FITS YOUR LIFE
-          </span>
-          <h1 className="mt-6 max-w-2xl text-[2.5rem] leading-[1.12] font-bold tracking-[-0.02em] text-on-surface sm:text-headline-xl lg:text-[3.75rem] lg:leading-[1.08]">
-            Feel better, with the right care at the right time.
-          </h1>
-          <p className="mt-6 max-w-xl text-body-lg text-on-surface-variant">
-            Connect with trusted clinicians from the comfort of home. Clear
-            guidance, thoughtful support, and care that puts you first.
-          </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a
-              href="#consultation"
-              className="rounded-lg bg-primary px-6 py-3.5 text-center text-label-md text-on-primary shadow-ambient transition hover:-translate-y-0.5 hover:shadow-ambient-hover"
-            >
-              Book a consultation
-            </a>
-            <a
-              href="/how-it-works"
-              className="rounded-lg border border-outline-variant bg-surface-container-lowest px-6 py-3.5 text-center text-label-md text-primary transition hover:-translate-y-0.5 hover:border-primary"
-            >
-              See how it works
-            </a>
-          </div>
-        </div>
-
-        <div className="relative overflow-hidden rounded-xl bg-surface-container p-5 sm:p-8">
-          <div className="absolute -right-16 -top-16 size-52 rounded-full bg-secondary-fixed/70" />
-          <div className="absolute -bottom-20 -left-12 size-56 rounded-full bg-primary-fixed/50" />
-          <div className="relative rounded-xl bg-surface-container-lowest p-6 shadow-ambient sm:p-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-label-sm text-on-surface-variant">
-                  UPCOMING APPOINTMENT
-                </p>
-                <h2 className="mt-2 text-headline-md">Today, 3:30 PM</h2>
-              </div>
-              <span className="grid size-12 place-items-center rounded-full bg-primary-fixed text-primary">
-                <CalendarIcon />
-              </span>
+      <div className="flex min-h-svh flex-col">
+        <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-5 sm:px-8 lg:px-16">
+          <a
+            href="#"
+            className="flex items-center gap-3 font-semibold tracking-tight text-on-surface"
+            aria-label="Serene Health home"
+          >
+            <span className="grid size-10 place-items-center rounded-md bg-primary text-xl text-on-primary">
+              +
+            </span>
+            <span className="text-body-sm md:text-body-md">Sikkim Health</span>
+          </a>
+          {dashboardHref ? (
+            <LandingNavigationButton href={dashboardHref}>
+              Go to dashboard
+            </LandingNavigationButton>
+          ) : (
+            <div className="flex gap-2 items-center">
+              <LandingNavigationButton href="/patient/login" variant="filled">
+                Login Patient
+              </LandingNavigationButton>
+              <div className="w-[0.5px] h-10 bg-gray-500"></div>
+              <LandingNavigationButton href="/consultant/login">
+                Login Consultant
+              </LandingNavigationButton>
             </div>
-            <div className="my-6 h-px bg-outline-variant/60" />
-            <div className="flex items-center gap-4">
-              <div className="grid size-14 shrink-0 place-items-center rounded-full bg-secondary-fixed text-lg font-semibold text-on-secondary-fixed-variant">
-                AM
-              </div>
-              <div>
-                <p className="font-semibold">Dr. Ananya Mehta</p>
-                <p className="text-sm text-on-surface-variant">
-                  General Physician · Video visit
-                </p>
-              </div>
-            </div>
-            <div className="mt-6 rounded-lg bg-surface-container-low p-4 text-sm leading-6 text-on-surface-variant">
-              Your consultation is confirmed. We’ll send a reminder 10 minutes
-              before it begins.
+          )}
+        </nav>
+
+        <section className="mx-auto grid w-full max-w-7xl flex-1 gap-10 px-4 pb-12 pt-12 sm:px-8 md:pt-20 lg:grid-cols-[1.05fr_.95fr] lg:items-center lg:px-16 lg:pb-20">
+          <div>
+            <span className="inline-flex rounded-full bg-primary-fixed px-4 py-2 text-label-sm text-on-primary-fixed-variant">
+              CARE THAT FITS YOUR LIFE
+            </span>
+            <h1 className="mt-6 max-w-2xl text-[2.5rem] leading-[1.12] font-bold tracking-[-0.02em] text-on-surface sm:text-headline-xl lg:text-[3.75rem] lg:leading-[1.08]">
+              Feel better, with the right care at the right time.
+            </h1>
+            <p className="mt-6 max-w-xl text-body-lg text-on-surface-variant">
+              Connect with trusted clinicians from the comfort of home. Clear
+              guidance, thoughtful support, and care that puts you first.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <a
+                href="#consultation"
+                className="rounded-lg bg-primary px-6 py-3.5 text-center text-label-md text-on-primary shadow-ambient transition hover:-translate-y-0.5 hover:shadow-ambient-hover"
+              >
+                Book a consultation
+              </a>
+              <a
+                href="/how-it-works"
+                className="rounded-lg border border-outline-variant bg-surface-container-lowest px-6 py-3.5 text-center text-label-md text-primary transition hover:-translate-y-0.5 hover:border-primary"
+              >
+                See how it works
+              </a>
             </div>
           </div>
-        </div>
-      </section>
+
+          <div className="relative overflow-hidden rounded-xl bg-surface-container p-5 sm:p-8">
+            <div className="absolute -right-16 -top-16 size-52 rounded-full bg-secondary-fixed/70" />
+            <div className="absolute -bottom-20 -left-12 size-56 rounded-full bg-primary-fixed/50" />
+            <div className="relative rounded-xl bg-surface-container-lowest p-6 shadow-ambient sm:p-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-label-sm text-on-surface-variant">
+                    UPCOMING APPOINTMENT
+                  </p>
+                  <h2 className="mt-2 text-headline-md">Today, 3:30 PM</h2>
+                </div>
+                <span className="grid size-12 place-items-center rounded-full bg-primary-fixed text-primary">
+                  <CalendarIcon />
+                </span>
+              </div>
+              <div className="my-6 h-px bg-outline-variant/60" />
+              <div className="flex items-center gap-4">
+                <div className="grid size-14 shrink-0 place-items-center rounded-full bg-secondary-fixed text-lg font-semibold text-on-secondary-fixed-variant">
+                  AM
+                </div>
+                <div>
+                  <p className="font-semibold">Dr. Ananya Mehta</p>
+                  <p className="text-sm text-on-surface-variant">
+                    General Physician · Video visit
+                  </p>
+                </div>
+              </div>
+              <div className="mt-6 rounded-lg bg-surface-container-low p-4 text-sm leading-6 text-on-surface-variant">
+                Your consultation is confirmed. We’ll send a reminder 10 minutes
+                before it begins.
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
 
       <section
         id="how-it-works"
