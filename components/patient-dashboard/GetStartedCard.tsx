@@ -50,11 +50,11 @@ export default function GetStartedCard() {
           >
             {isPending ? "Creating Consultation..." : "Book Consultation"}
           </button>
-          <Link href="/patient/profile">
+          {/* <Link href="/patient/profile">
             <button className="bg-surface-container-highest hover:bg-surface-container-high text-on-surface font-label-md text-label-md py-2.5 px-5 rounded-md transition-colors border border-outline-variant">
               Complete Profile
             </button>
-          </Link>
+          </Link> */}
         </div>
         {error && (
           <p className="text-body-sm text-error" role="alert">

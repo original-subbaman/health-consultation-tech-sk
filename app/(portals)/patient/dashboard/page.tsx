@@ -4,6 +4,7 @@ import ConsultationList from "@/components/patient-dashboard/ConsultationList";
 import { getPatientProfile } from "@/lib/data/patient";
 import { HeartPulse, Ruler, VenusAndMars, Weight } from "lucide-react";
 import { getSalutation } from "@/lib/helper";
+import ActiveConsultationCard from "@/components/patient-dashboard/ActiveConsultationCard";
 
 export default async function PatientDashboardPage() {
   const user = await getPatientProfile();
@@ -23,36 +24,7 @@ export default async function PatientDashboardPage() {
           <GetStartedCard />
         </section>
         <aside className="h-full lg:col-span-4">
-          <div className="grid h-full grid-cols-1 md:grid-cols-2 gap-2">
-            <StatCard
-              icon={<Weight aria-hidden="true" className="size-5" />}
-              label="Weight"
-              value={user.weight ?? "--"}
-              unit="kg"
-            />
-            <StatCard
-              icon={<Ruler aria-hidden="true" className="size-5" />}
-              label="Height"
-              value={user.height ?? "--"}
-              unit="cm"
-            />
-            <StatCard
-              icon={<VenusAndMars aria-hidden="true" className="size-5" />}
-              label="Gender"
-              value={
-                user.gender
-                  ? user.gender.charAt(0).toUpperCase() + user.gender.slice(1)
-                  : "--"
-              }
-            />
-            <StatCard
-              icon={<HeartPulse aria-hidden="true" className="size-5" />}
-              label="Blood Pressure"
-              value="--/--"
-              unit="mmHg"
-              status="Take On: 13/09/2023"
-            />
-          </div>
+          <ActiveConsultationCard />
         </aside>
       </div>
       <ConsultationList />

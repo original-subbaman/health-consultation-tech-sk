@@ -7,6 +7,7 @@ import {
 import type { Tables } from "@/database.types";
 import { requirePatient } from "@/lib/auth/auth";
 import { createClient } from "@/lib/supabase/server";
+import { success } from "zod";
 
 type GetLatestDraftConsultationResult =
   | {
@@ -95,6 +96,50 @@ export async function getLatestDraftConsultation(): Promise<GetLatestDraftConsul
     return {
       success: false,
       message: "Consultation could not be loaded at the moment",
+    };
+  }
+}
+
+export async function getActiveConsultation() {
+  const patiet = await requirePatient();
+  try {
+    const client = await createClient();
+    const { data: activeConsultation, error } = await client
+      .from("consultations")
+      .select(
+        "id, patient_id, doctor_id, status, created_at, updated_at, submitted_at, completed_at",
+      )
+      .eq("patient_id", patiet.id)
+      .eq("status", "submitted")
+      .not("doctor_id", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error("🚀 ~ getActiveConsultation ~ error:", error);
+      return {
+        success: false,
+        message: "Error fetching consultation",
+      };
+    }
+
+    if (!activeConsultation) {
+      return {
+        success: false,
+        message: "No active consultation found",
+      };
+    }
+
+    return {
+      success: true,
+      data: activeConsultation,
+    };
+  } catch (error) {
+    console.log("🚀 ~ getActiveConsultation ~ error:", error);
+    return {
+      success: false,
+      message: "Error fetching consultation",
     };
   }
 }
