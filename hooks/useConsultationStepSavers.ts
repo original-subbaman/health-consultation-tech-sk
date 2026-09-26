@@ -3,11 +3,15 @@
 import {
   saveConsultationIntakes,
   saveCurrentIssueTrend,
+  saveMedicalHistory,
+  saveMedicalRecords,
+  savePatientAllergies,
+  savePatientMedications,
   savePatientVitals,
 } from "@/actions/consultations";
 import type { ConsultationFormValues } from "@/components/book-consultation/consultation-form";
 import { useCallback, useMemo, useState } from "react";
-import type { UseFormGetValues } from "react-hook-form";
+import type { UseFormGetValues, UseFormSetValue } from "react-hook-form";
 
 type StepSaveResult =
   | { success: true; message?: string }
@@ -18,9 +22,11 @@ type StepSaver = () => Promise<StepSaveResult>;
 export function useConsultationStepSavers({
   consultationId,
   getValues,
+  setValue,
 }: {
   consultationId: string;
   getValues: UseFormGetValues<ConsultationFormValues>;
+  setValue: UseFormSetValue<ConsultationFormValues>;
 }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -42,8 +48,57 @@ export function useConsultationStepSavers({
           ...getValues("currentIssueTrend"),
           consultationId,
         }),
+      4: async () => {
+        const medicalHistoryResult = await saveMedicalHistory({
+          conditions: getValues("medicalHistory.conditions"),
+          consultationId,
+          recentSymptoms: getValues("medicalHistory.recentSymptoms"),
+        });
+
+        if (!medicalHistoryResult.success) {
+          return medicalHistoryResult;
+        }
+
+        const medicationsResult = await savePatientMedications({
+          consultationId,
+          medications: getValues("medicalHistory.medications"),
+        });
+
+        if (!medicationsResult.success) {
+          return medicationsResult;
+        }
+
+        const allergiesResult = await savePatientAllergies({
+          allergies: getValues("medicalHistory.allergies"),
+          consultationId,
+        });
+
+        if (!allergiesResult.success) {
+          return allergiesResult;
+        }
+
+        const medicalRecord = getValues("medicalHistory.medicalRecords")[0];
+
+        if (!medicalRecord) {
+          return allergiesResult;
+        }
+
+        const formData = new FormData();
+        formData.set("consultationId", consultationId);
+        formData.set("file", medicalRecord);
+
+        const medicalRecordResult = await saveMedicalRecords(formData);
+
+        if (medicalRecordResult.success) {
+          setValue("medicalHistory.medicalRecords", [], {
+            shouldDirty: false,
+          });
+        }
+
+        return medicalRecordResult;
+      },
     }),
-    [consultationId, getValues],
+    [consultationId, getValues, setValue],
   );
 
   const saveStep = useCallback(

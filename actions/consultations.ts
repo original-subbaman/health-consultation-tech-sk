@@ -1,13 +1,21 @@
 "use server";
 
-import type { Tables } from "@/database.types";
+import type { Json, Tables } from "@/database.types";
 import { requirePatient } from "@/lib/auth/auth";
+import { saveMedicalRecordFile } from "@/lib/storage/medical-records";
 import { createClient } from "@/lib/supabase/server";
 import {
+  type Allergies,
+  allergiesSchema,
   type ConsultationIntake,
   consultationIntakeSchema,
   type CurrentIssueTrend,
   currentIssueTrendSchema,
+  type MedicalHistory,
+  medicalHistorySchema,
+  medicalRecordUploadSchema,
+  type Medications,
+  medicationsSchema,
   type PatientMeasurements,
   patientMeasurementsSchema,
 } from "@/lib/validation/consultation";
@@ -332,6 +340,308 @@ export async function saveCurrentIssueTrend(trend: CurrentIssueTrend) {
     return {
       success: false,
       message: "Current issue trend could not be saved",
+    };
+  }
+}
+
+export async function saveMedicalHistory(history: MedicalHistory) {
+  const patient = await requirePatient();
+  const validationResult = medicalHistorySchema.safeParse(history);
+
+  if (!validationResult.success) {
+    return {
+      success: false,
+      message:
+        validationResult.error.issues[0]?.message ??
+        "Invalid medical history",
+    };
+  }
+
+  const validatedHistory = validationResult.data;
+
+  try {
+    const client = await createClient();
+    const { data: consultation, error: consultationError } = await client
+      .from("consultations")
+      .select("id")
+      .eq("id", validatedHistory.consultationId)
+      .eq("patient_id", patient.id)
+      .eq("status", "draft")
+      .maybeSingle();
+
+    if (consultationError || !consultation) {
+      return {
+        success: false,
+        message: "Invalid consultation",
+      };
+    }
+
+    const { error } = await client.from("patient_medical_history").upsert(
+      {
+        consultation_id: consultation.id,
+        existing_conditions: validatedHistory.conditions,
+        current_health_issues: validatedHistory.recentSymptoms,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "consultation_id" },
+    );
+
+    if (error) {
+      console.error("Failed to save patient medical history", {
+        consultationId: consultation.id,
+        patientId: patient.id,
+        error,
+      });
+
+      return {
+        success: false,
+        message: "Could not save the medical history",
+      };
+    }
+
+    return {
+      success: true,
+      message: "Medical history saved successfully",
+    };
+  } catch (error) {
+    console.error("Failed to save patient medical history", {
+      consultationId: validatedHistory.consultationId,
+      patientId: patient.id,
+      error,
+    });
+
+    return {
+      success: false,
+      message: "Medical history could not be saved",
+    };
+  }
+}
+
+export async function savePatientMedications(input: Medications) {
+  const patient = await requirePatient();
+  const validationResult = medicationsSchema.safeParse(input);
+
+  if (!validationResult.success) {
+    return {
+      success: false,
+      message:
+        validationResult.error.issues[0]?.message ?? "Invalid medications",
+    };
+  }
+
+  const validatedInput = validationResult.data;
+
+  try {
+    const client = await createClient();
+    const { data: consultation, error: consultationError } = await client
+      .from("consultations")
+      .select("id")
+      .eq("id", validatedInput.consultationId)
+      .eq("patient_id", patient.id)
+      .eq("status", "draft")
+      .maybeSingle();
+
+    if (consultationError || !consultation) {
+      return {
+        success: false,
+        message: "Invalid consultation",
+      };
+    }
+
+    const medications: Json = validatedInput.medications.map((medication) => ({
+      id: medication.id ?? null,
+      medication_name: medication.medicationName,
+      strength: medication.strength || null,
+      quantity: medication.quantity || null,
+      frequency: medication.frequency || null,
+    }));
+
+    const { error } = await client.rpc("save_patient_medications", {
+      p_consultation_id: consultation.id,
+      p_medications: medications,
+    });
+
+    if (error) {
+      console.error("Failed to save patient medications", {
+        consultationId: consultation.id,
+        patientId: patient.id,
+        error,
+      });
+
+      return {
+        success: false,
+        message: "Could not save the medications",
+      };
+    }
+
+    return {
+      success: true,
+      message: "Medications saved successfully",
+    };
+  } catch (error) {
+    console.error("Failed to save patient medications", {
+      consultationId: validatedInput.consultationId,
+      patientId: patient.id,
+      error,
+    });
+
+    return {
+      success: false,
+      message: "Medications could not be saved",
+    };
+  }
+}
+
+export async function savePatientAllergies(input: Allergies) {
+  const patient = await requirePatient();
+  const validationResult = allergiesSchema.safeParse(input);
+
+  if (!validationResult.success) {
+    return {
+      success: false,
+      message:
+        validationResult.error.issues[0]?.message ?? "Invalid allergies",
+    };
+  }
+
+  const validatedInput = validationResult.data;
+
+  try {
+    const client = await createClient();
+    const { data: consultation, error: consultationError } = await client
+      .from("consultations")
+      .select("id")
+      .eq("id", validatedInput.consultationId)
+      .eq("patient_id", patient.id)
+      .eq("status", "draft")
+      .maybeSingle();
+
+    if (consultationError || !consultation) {
+      return {
+        success: false,
+        message: "Invalid consultation",
+      };
+    }
+
+    const allergies: Json = validatedInput.allergies.map((allergy) => ({
+      id: allergy.id ?? null,
+      allergy_name: allergy.allergyName,
+      details: allergy.details || null,
+    }));
+
+    const { error } = await client.rpc("save_patient_allergies", {
+      p_consultation_id: consultation.id,
+      p_allergies: allergies,
+    });
+
+    if (error) {
+      console.error("Failed to save patient allergies", {
+        consultationId: consultation.id,
+        patientId: patient.id,
+        error,
+      });
+
+      return {
+        success: false,
+        message: "Could not save the allergies",
+      };
+    }
+
+    return {
+      success: true,
+      message: "Allergies saved successfully",
+    };
+  } catch (error) {
+    console.error("Failed to save patient allergies", {
+      consultationId: validatedInput.consultationId,
+      patientId: patient.id,
+      error,
+    });
+
+    return {
+      success: false,
+      message: "Allergies could not be saved",
+    };
+  }
+}
+
+export async function saveMedicalRecords(formData: FormData) {
+  const patient = await requirePatient();
+  const validationResult = medicalRecordUploadSchema.safeParse({
+    consultationId: formData.get("consultationId"),
+    file: formData.get("file"),
+  });
+
+  if (!validationResult.success) {
+    return {
+      success: false,
+      message:
+        validationResult.error.issues[0]?.message ??
+        "Invalid medical record upload",
+    };
+  }
+
+  const { consultationId, file } = validationResult.data;
+
+  try {
+    const client = await createClient();
+    const { data: consultation, error: consultationError } = await client
+      .from("consultations")
+      .select("id")
+      .eq("id", consultationId)
+      .eq("patient_id", patient.id)
+      .eq("status", "draft")
+      .maybeSingle();
+
+    if (consultationError || !consultation) {
+      return {
+        success: false,
+        message: "Invalid consultation",
+      };
+    }
+
+    const fileResult = await saveMedicalRecordFile({
+      client,
+      consultationId: consultation.id,
+      file,
+      patientId: patient.id,
+    });
+
+    if (!fileResult.success) {
+      console.error("Failed to save medical record file", {
+        consultationId: consultation.id,
+        patientId: patient.id,
+        stage: fileResult.stage,
+        error: fileResult.error,
+        cleanupError:
+          fileResult.stage === "metadata"
+            ? fileResult.cleanupError
+            : undefined,
+      });
+
+      return {
+        success: false,
+        message:
+          fileResult.stage === "upload"
+            ? "Could not upload the medical record"
+            : "Could not save the medical record",
+      };
+    }
+
+    return {
+      success: true,
+      message: "Medical record uploaded successfully",
+    };
+  } catch (error) {
+    console.error("Failed to save medical record", {
+      consultationId,
+      patientId: patient.id,
+      error,
+    });
+
+    return {
+      success: false,
+      message: "Medical record could not be uploaded",
     };
   }
 }

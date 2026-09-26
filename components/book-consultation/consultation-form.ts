@@ -1,3 +1,17 @@
+type MedicationFormValue = {
+  id?: string;
+  medicationName: string;
+  strength: string;
+  quantity: string;
+  frequency: string;
+};
+
+type AllergyFormValue = {
+  id?: string;
+  allergyName: string;
+  details: string;
+};
+
 export type ConsultationFormValues = {
   patient: {
     systolicBp: number | null;
@@ -27,9 +41,8 @@ export type ConsultationFormValues = {
   medicalHistory: {
     conditions: string[];
     recentSymptoms: string[];
-    medications: string;
-    allergyStatus: "" | "yes" | "none";
-    allergyDetails: string;
+    medications: MedicationFormValue[];
+    allergies: AllergyFormValue[];
     medicalRecords: File[];
     lifestyle: {
       recentWeightChange: "" | "yes" | "no";
@@ -69,9 +82,8 @@ export const consultationFormDefaultValues: ConsultationFormValues = {
   medicalHistory: {
     conditions: ["none"],
     recentSymptoms: ["none"],
-    medications: "",
-    allergyStatus: "",
-    allergyDetails: "",
+    medications: [],
+    allergies: [],
     medicalRecords: [],
     lifestyle: {
       recentWeightChange: "",

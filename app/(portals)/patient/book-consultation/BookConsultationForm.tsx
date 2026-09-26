@@ -57,6 +57,12 @@ const stepFields: Partial<Record<number, FieldPath<ConsultationFormValues>[]>> =
       "currentIssueTrend.longitudinalTrend",
       "currentIssueTrend.redFlagSymptoms",
     ],
+    4: [
+      "medicalHistory.conditions",
+      "medicalHistory.recentSymptoms",
+      "medicalHistory.medications",
+      "medicalHistory.allergies",
+    ],
   };
 
 function HeadingSection({ currentStep }: { currentStep: number }) {
@@ -180,6 +186,7 @@ export default function BookConsultationForm({
   const { isSaving, saveError, saveStep } = useConsultationStepSavers({
     consultationId,
     getValues: form.getValues,
+    setValue: form.setValue,
   });
 
   const navigateToStep = useCallback(
@@ -215,9 +222,11 @@ export default function BookConsultationForm({
     }
 
     const fields = stepFields[currentStep];
+    console.log("🚀 ~ handleNextStep ~ fields:", fields);
     const isStepValid = fields
       ? await form.trigger(fields, { shouldFocus: true })
       : true;
+    console.log("🚀 ~ handleNextStep ~ isStepValid:", isStepValid);
 
     if (!isStepValid) {
       return;

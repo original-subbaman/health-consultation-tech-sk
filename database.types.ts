@@ -355,7 +355,6 @@ export type Database = {
           created_at: string
           current_health_issues: string[] | null
           existing_conditions: string[] | null
-          has_allergies: boolean | null
           id: string
           updated_at: string
         }
@@ -364,7 +363,6 @@ export type Database = {
           created_at?: string
           current_health_issues?: string[] | null
           existing_conditions?: string[] | null
-          has_allergies?: boolean | null
           id?: string
           updated_at?: string
         }
@@ -373,7 +371,6 @@ export type Database = {
           created_at?: string
           current_health_issues?: string[] | null
           existing_conditions?: string[] | null
-          has_allergies?: boolean | null
           id?: string
           updated_at?: string
         }
@@ -391,23 +388,29 @@ export type Database = {
         Row: {
           consultation_id: string
           created_at: string
+          frequency: string | null
           id: string
           medication_name: string
-          quantity_or_dose: string | null
+          quantity: string | null
+          strength: string | null
         }
         Insert: {
           consultation_id: string
           created_at?: string
+          frequency?: string | null
           id?: string
           medication_name: string
-          quantity_or_dose?: string | null
+          quantity?: string | null
+          strength?: string | null
         }
         Update: {
           consultation_id?: string
           created_at?: string
+          frequency?: string | null
           id?: string
           medication_name?: string
-          quantity_or_dose?: string | null
+          quantity?: string | null
+          strength?: string | null
         }
         Relationships: [
           {
@@ -495,7 +498,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      save_patient_allergies: {
+        Args: { p_allergies: Json; p_consultation_id: string }
+        Returns: undefined
+      }
+      save_patient_medications: {
+        Args: { p_consultation_id: string; p_medications: Json }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "patient" | "consultant" | "admin"

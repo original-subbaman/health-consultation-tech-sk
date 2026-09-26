@@ -115,6 +115,22 @@ export async function getConsultationFormValues(
             speed_of_change,
             longitudinal_trend,
             red_flag_symptoms
+          ),
+          patient_medical_history (
+            existing_conditions,
+            current_health_issues
+          ),
+          patient_medications (
+            id,
+            medication_name,
+            strength,
+            quantity,
+            frequency
+          ),
+          patient_allergies (
+            id,
+            allergy_name,
+            details
           )
         `,
       )
@@ -132,6 +148,7 @@ export async function getConsultationFormValues(
 
     const measurement = consultation.patient_measurements[0];
     const intake = consultation.consultation_intakes;
+    const medicalHistory = consultation.patient_medical_history;
 
     return {
       success: true,
@@ -169,6 +186,27 @@ export async function getConsultationFormValues(
           redFlagSymptoms:
             intake?.red_flag_symptoms ??
             consultationFormDefaultValues.currentIssueTrend.redFlagSymptoms,
+        },
+        medicalHistory: {
+          ...consultationFormDefaultValues.medicalHistory,
+          conditions:
+            medicalHistory?.existing_conditions ??
+            consultationFormDefaultValues.medicalHistory.conditions,
+          recentSymptoms:
+            medicalHistory?.current_health_issues ??
+            consultationFormDefaultValues.medicalHistory.recentSymptoms,
+          medications: consultation.patient_medications.map((medication) => ({
+            id: medication.id,
+            medicationName: medication.medication_name,
+            strength: medication.strength ?? "",
+            quantity: medication.quantity ?? "",
+            frequency: medication.frequency ?? "",
+          })),
+          allergies: consultation.patient_allergies.map((allergy) => ({
+            id: allergy.id,
+            allergyName: allergy.allergy_name,
+            details: allergy.details ?? "",
+          })),
         },
       },
     };

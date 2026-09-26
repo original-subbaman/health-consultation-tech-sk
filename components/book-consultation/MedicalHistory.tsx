@@ -1,15 +1,19 @@
 "use client";
 
 import type { ConsultationFormValues } from "@/components/book-consultation/consultation-form";
-import { FileText, Upload } from "lucide-react";
-import { useController, useFormContext } from "react-hook-form";
+import { FileText, Plus, Trash2, Upload } from "lucide-react";
+import {
+  Controller,
+  useController,
+  useFieldArray,
+  useFormContext,
+} from "react-hook-form";
 import RequiredMark from "./RequiredMark";
 import {
   CheckboxGroup,
   FieldError,
+  Input,
   Label,
-  Text,
-  TextArea,
   TextField,
 } from "react-aria-components";
 import {
@@ -20,7 +24,6 @@ import {
   getExclusiveNoneValues,
   questionClassName,
   questionLabelClassName,
-  RadioChoiceGroup,
   textInputClassName,
 } from "./FormControls";
 import FormSectionHeader from "./FormSectionHeader";
@@ -50,7 +53,7 @@ const recentSymptomOptions = [
 ] as const;
 
 export default function MedicalHistory() {
-  const { control, setValue } = useFormContext<ConsultationFormValues>();
+  const { control } = useFormContext<ConsultationFormValues>();
   const { field: conditions, fieldState: conditionsState } = useController({
     control,
     name: "medicalHistory.conditions",
@@ -68,27 +71,7 @@ export default function MedicalHistory() {
           values.length > 0 || "Select a symptom or select None of the above.",
       },
     });
-  const { field: medications } = useController({
-    control,
-    name: "medicalHistory.medications",
-  });
-  const { field: allergyStatus, fieldState: allergyStatusState } =
-    useController({
-      control,
-      name: "medicalHistory.allergyStatus",
-      rules: { required: "Select whether you have allergies." },
-    });
-  const { field: allergyDetails, fieldState: allergyDetailsState } =
-    useController({
-      control,
-      name: "medicalHistory.allergyDetails",
-      rules: {
-        validate: (value) =>
-          allergyStatus.value !== "yes" ||
-          value.trim().length > 0 ||
-          "Describe your allergies.",
-      },
-    });
+
   const {
     field: {
       name: medicalRecordsName,
@@ -98,17 +81,6 @@ export default function MedicalHistory() {
       value: medicalRecordFiles,
     },
   } = useController({ control, name: "medicalHistory.medicalRecords" });
-
-  function handleAllergyStatusChange(value: string) {
-    allergyStatus.onChange(value);
-
-    if (value !== "yes") {
-      setValue("medicalHistory.allergyDetails", "", {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-    }
-  }
 
   return (
     <FormSection>
@@ -148,61 +120,9 @@ export default function MedicalHistory() {
         isInvalid={recentSymptomsState.invalid}
       />
 
-      <TextField
-        className={questionClassName}
-        name={medications.name}
-        onBlur={medications.onBlur}
-        onChange={medications.onChange}
-        value={medications.value}
-      >
-        <Label className={questionLabelClassName}>Medications</Label>
-        <Text className={descriptionClassName} slot="description">
-          List all medications you are currently taking and their quantities.
-        </Text>
-        <TextArea
-          className={textInputClassName}
-          placeholder="Medication name, dose, and frequency"
-          rows={4}
-        />
-      </TextField>
+      <MedicationsFieldArray />
 
-      <RadioChoiceGroup
-        error={allergyStatusState.error?.message}
-        label="Allergies"
-        name={allergyStatus.name}
-        onBlur={allergyStatus.onBlur}
-        onChange={handleAllergyStatusChange}
-        options={[
-          ["yes", "Yes"],
-          ["none", "None"],
-        ]}
-        value={allergyStatus.value}
-        isInvalid={allergyStatusState.invalid}
-      />
-
-      {allergyStatus.value === "yes" && (
-        <TextField
-          className={questionClassName}
-          name={allergyDetails.name}
-          onBlur={allergyDetails.onBlur}
-          onChange={allergyDetails.onChange}
-          value={allergyDetails.value}
-          isInvalid={allergyDetailsState.invalid}
-          isRequired
-        >
-          <Label className={questionLabelClassName}>
-            Describe your allergies <RequiredMark />
-          </Label>
-          <TextArea
-            className={textInputClassName}
-            placeholder="Include the allergen and your usual reaction"
-            rows={3}
-          />
-          <FieldError className={errorClassName}>
-            {allergyDetailsState.error?.message}
-          </FieldError>
-        </TextField>
-      )}
+      <AllergyFieldArray />
 
       <div className={questionClassName}>
         <Label className={questionLabelClassName}>
@@ -218,18 +138,19 @@ export default function MedicalHistory() {
             Choose medical records
           </span>
           <span className="text-label-sm text-outline">
-            PDF, JPG, PNG, DOC, or DOCX
+            One PDF, JPG, PNG, DOC, or DOCX file, up to 5 MB
           </span>
           <input
             ref={medicalRecordsRef}
             accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
             className="sr-only"
-            multiple
             name={medicalRecordsName}
             onBlur={handleMedicalRecordsBlur}
             onChange={(event) =>
               handleMedicalRecordsChange(
-                Array.from(event.currentTarget.files ?? []),
+                event.currentTarget.files?.[0]
+                  ? [event.currentTarget.files[0]]
+                  : [],
               )
             }
             type="file"
@@ -250,6 +171,326 @@ export default function MedicalHistory() {
         )}
       </div>
     </FormSection>
+  );
+}
+
+function AllergyFieldArray() {
+  const { control } = useFormContext<ConsultationFormValues>();
+  const {
+    fields: allergies,
+    append,
+    remove,
+  } = useFieldArray({
+    control,
+    name: "medicalHistory.allergies",
+  });
+
+  return (
+    <div className={questionClassName}>
+      <div>
+        <h2 className={questionLabelClassName}>Allergy details</h2>
+        <p className={descriptionClassName}>
+          Add each allergy and describe the reaction or other relevant details.
+        </p>
+      </div>
+
+      {allergies.map((allergy, index) => (
+        <div
+          className="flex flex-col gap-4 rounded-xl bg-surface-container-low/60 p-4 sm:p-5"
+          key={allergy.id}
+        >
+          <div className="flex items-center justify-between gap-4">
+            <h3 className="text-label-lg font-semibold text-on-surface">
+              Allergy {index + 1}
+            </h3>
+            <button
+              aria-label={`Remove allergy ${index + 1}`}
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-label-md font-medium text-error outline-none transition-colors hover:bg-error-container/30 focus-visible:ring-3 focus-visible:ring-error-container"
+              onClick={() => remove(index)}
+              type="button"
+            >
+              <Trash2 aria-hidden="true" className="size-4" />
+              Remove
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Controller
+              control={control}
+              name={`medicalHistory.allergies.${index}.allergyName`}
+              rules={{
+                required: "Allergy name is required.",
+                maxLength: {
+                  value: 200,
+                  message: "Allergy name must be 200 characters or fewer.",
+                },
+              }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  className={questionClassName}
+                  name={field.name}
+                  onBlur={field.onBlur}
+                  onChange={field.onChange}
+                  value={field.value}
+                  isInvalid={fieldState.invalid}
+                  isRequired
+                >
+                  <Label className={questionLabelClassName}>
+                    Allergy name <RequiredMark />
+                  </Label>
+                  <Input
+                    ref={field.ref}
+                    className={textInputClassName}
+                    maxLength={200}
+                    placeholder="e.g. Penicillin"
+                  />
+                  <FieldError className={errorClassName}>
+                    {fieldState.error?.message}
+                  </FieldError>
+                </TextField>
+              )}
+            />
+
+            <Controller
+              control={control}
+              name={`medicalHistory.allergies.${index}.details`}
+              rules={{
+                maxLength: {
+                  value: 1000,
+                  message: "Details must be 1000 characters or fewer.",
+                },
+              }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  className={questionClassName}
+                  name={field.name}
+                  onBlur={field.onBlur}
+                  onChange={field.onChange}
+                  value={field.value}
+                  isInvalid={fieldState.invalid}
+                >
+                  <Label className={questionLabelClassName}>Details</Label>
+                  <Input
+                    ref={field.ref}
+                    className={textInputClassName}
+                    maxLength={1000}
+                    placeholder="e.g. Causes hives and swelling"
+                  />
+                  <FieldError className={errorClassName}>
+                    {fieldState.error?.message}
+                  </FieldError>
+                </TextField>
+              )}
+            />
+          </div>
+        </div>
+      ))}
+
+      <button
+        className="inline-flex w-fit items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-label-md font-semibold text-on-primary shadow-sm outline-none transition-colors hover:bg-primary-container focus-visible:ring-3 focus-visible:ring-primary-fixed/60"
+        onClick={() => append({ allergyName: "", details: "" })}
+        type="button"
+      >
+        <Plus aria-hidden="true" className="size-4" />
+        Add allergy
+      </button>
+    </div>
+  );
+}
+
+function MedicationsFieldArray() {
+  const { control } = useFormContext<ConsultationFormValues>();
+  const {
+    fields: medications,
+    append,
+    remove,
+  } = useFieldArray({
+    control,
+    name: "medicalHistory.medications",
+  });
+
+  return (
+    <div className={questionClassName}>
+      <div>
+        <h2 className={questionLabelClassName}>Medications</h2>
+        <p className={descriptionClassName}>
+          Add each medication you currently take, including its strength and
+          schedule.
+        </p>
+      </div>
+
+      {medications.map((medication, index) => (
+        <div
+          className="flex flex-col gap-4 rounded-xl bg-surface-container-low/60 p-4 sm:p-5"
+          key={medication.id}
+        >
+          <div className="flex items-center justify-between gap-4">
+            <h3 className="text-label-lg font-semibold text-on-surface">
+              Medication {index + 1}
+            </h3>
+            <button
+              aria-label={`Remove medication ${index + 1}`}
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-label-md font-medium text-error outline-none transition-colors hover:bg-error-container/30 focus-visible:ring-3 focus-visible:ring-error-container"
+              onClick={() => remove(index)}
+              type="button"
+            >
+              <Trash2 aria-hidden="true" className="size-4" />
+              Remove
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Controller
+              control={control}
+              name={`medicalHistory.medications.${index}.medicationName`}
+              rules={{
+                required: "Medication name is required.",
+                maxLength: {
+                  value: 200,
+                  message: "Medication name must be 200 characters or fewer.",
+                },
+              }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  className={questionClassName}
+                  name={field.name}
+                  onBlur={field.onBlur}
+                  onChange={field.onChange}
+                  value={field.value}
+                  isInvalid={fieldState.invalid}
+                  isRequired
+                >
+                  <Label className={questionLabelClassName}>
+                    Medication name <RequiredMark />
+                  </Label>
+                  <Input
+                    ref={field.ref}
+                    className={textInputClassName}
+                    maxLength={200}
+                    placeholder="e.g. Metformin"
+                  />
+                  <FieldError className={errorClassName}>
+                    {fieldState.error?.message}
+                  </FieldError>
+                </TextField>
+              )}
+            />
+
+            <Controller
+              control={control}
+              name={`medicalHistory.medications.${index}.strength`}
+              rules={{
+                maxLength: {
+                  value: 100,
+                  message: "Strength must be 100 characters or fewer.",
+                },
+              }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  className={questionClassName}
+                  name={field.name}
+                  onBlur={field.onBlur}
+                  onChange={field.onChange}
+                  value={field.value}
+                  isInvalid={fieldState.invalid}
+                >
+                  <Label className={questionLabelClassName}>Strength</Label>
+                  <Input
+                    ref={field.ref}
+                    className={textInputClassName}
+                    maxLength={100}
+                    placeholder="e.g. 500 mg"
+                  />
+                  <FieldError className={errorClassName}>
+                    {fieldState.error?.message}
+                  </FieldError>
+                </TextField>
+              )}
+            />
+
+            <Controller
+              control={control}
+              name={`medicalHistory.medications.${index}.quantity`}
+              rules={{
+                maxLength: {
+                  value: 100,
+                  message: "Quantity must be 100 characters or fewer.",
+                },
+              }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  className={questionClassName}
+                  name={field.name}
+                  onBlur={field.onBlur}
+                  onChange={field.onChange}
+                  value={field.value}
+                  isInvalid={fieldState.invalid}
+                >
+                  <Label className={questionLabelClassName}>Quantity</Label>
+                  <Input
+                    ref={field.ref}
+                    className={textInputClassName}
+                    maxLength={100}
+                    placeholder="e.g. 1 tablet"
+                  />
+                  <FieldError className={errorClassName}>
+                    {fieldState.error?.message}
+                  </FieldError>
+                </TextField>
+              )}
+            />
+
+            <Controller
+              control={control}
+              name={`medicalHistory.medications.${index}.frequency`}
+              rules={{
+                maxLength: {
+                  value: 100,
+                  message: "Frequency must be 100 characters or fewer.",
+                },
+              }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  className={questionClassName}
+                  name={field.name}
+                  onBlur={field.onBlur}
+                  onChange={field.onChange}
+                  value={field.value}
+                  isInvalid={fieldState.invalid}
+                >
+                  <Label className={questionLabelClassName}>Frequency</Label>
+                  <Input
+                    ref={field.ref}
+                    className={textInputClassName}
+                    maxLength={100}
+                    placeholder="e.g. Twice daily"
+                  />
+                  <FieldError className={errorClassName}>
+                    {fieldState.error?.message}
+                  </FieldError>
+                </TextField>
+              )}
+            />
+          </div>
+        </div>
+      ))}
+
+      <button
+        className="inline-flex w-fit items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-label-md font-semibold text-on-primary shadow-sm outline-none transition-colors hover:bg-primary-container focus-visible:ring-3 focus-visible:ring-primary-fixed/60"
+        onClick={() =>
+          append({
+            medicationName: "",
+            strength: "",
+            quantity: "",
+            frequency: "",
+          })
+        }
+        type="button"
+      >
+        <Plus aria-hidden="true" className="size-4" />
+        Add medication
+      </button>
+    </div>
   );
 }
 
