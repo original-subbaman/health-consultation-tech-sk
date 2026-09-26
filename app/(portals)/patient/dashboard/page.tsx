@@ -1,13 +1,40 @@
 import GetStartedCard from "@/components/patient-dashboard/GetStartedCard";
-import StatCard from "@/components/patient-dashboard/StatCard";
 import ConsultationList from "@/components/patient-dashboard/ConsultationList";
 import { getPatientProfile } from "@/lib/data/patient";
-import { HeartPulse, Ruler, VenusAndMars, Weight } from "lucide-react";
 import { getSalutation } from "@/lib/helper";
 import ActiveConsultationCard from "@/components/patient-dashboard/ActiveConsultationCard";
+import type { PatientConsultationStatus } from "@/lib/data/consultation";
 
-export default async function PatientDashboardPage() {
+type PatientDashboardSearchParams = {
+  consultationPage?: string | string[];
+  doctor?: string | string[];
+  submittedDate?: string | string[];
+  status?: string | string[];
+};
+
+function getSingleSearchParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function getConsultationStatus(
+  value: string | undefined,
+): PatientConsultationStatus | undefined {
+  return value === "draft" || value === "submitted" || value === "completed"
+    ? value
+    : undefined;
+}
+
+export default async function PatientDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<PatientDashboardSearchParams>;
+}) {
   const user = await getPatientProfile();
+  const query = await searchParams;
+  const page = Number(getSingleSearchParam(query.consultationPage));
+  const doctorName = getSingleSearchParam(query.doctor);
+  const submittedDate = getSingleSearchParam(query.submittedDate);
+  const status = getConsultationStatus(getSingleSearchParam(query.status));
 
   return (
     <section className="flex flex-col items-start gap-4 pt-6">
@@ -27,7 +54,14 @@ export default async function PatientDashboardPage() {
           <ActiveConsultationCard />
         </aside>
       </div>
-      <ConsultationList />
+      <ConsultationList
+        filters={{
+          page: Number.isFinite(page) && page > 0 ? Math.trunc(page) : 1,
+          doctorName,
+          submittedDate,
+          status,
+        }}
+      />
     </section>
   );
 }
