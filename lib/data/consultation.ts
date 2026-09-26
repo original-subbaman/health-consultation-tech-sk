@@ -8,7 +8,7 @@ import type { Tables } from "@/database.types";
 import { requirePatient } from "@/lib/auth/auth";
 import { createClient } from "@/lib/supabase/server";
 
-type GetActiveConsultationResult =
+type GetLatestDraftConsultationResult =
   | {
       success: true;
       consultation: Tables<"consultations">;
@@ -28,7 +28,8 @@ export type GetConsultationFormValuesResult =
       message: string;
     };
 
-type LifestyleFormValues = ConsultationFormValues["medicalHistory"]["lifestyle"];
+type LifestyleFormValues =
+  ConsultationFormValues["medicalHistory"]["lifestyle"];
 
 function toSmokingFormValue(
   value: string | null | undefined,
@@ -41,14 +42,12 @@ function toSmokingFormValue(
 function toAlcoholFormValue(
   value: string | null | undefined,
 ): LifestyleFormValues["alcohol"] {
-  return value === "none" ||
-    value === "occasional" ||
-    value === "regular"
+  return value === "none" || value === "occasional" || value === "regular"
     ? value
     : "";
 }
 
-export async function getActiveConsultation(): Promise<GetActiveConsultationResult> {
+export async function getLatestDraftConsultation(): Promise<GetLatestDraftConsultationResult> {
   const patient = await requirePatient();
 
   try {
@@ -65,7 +64,7 @@ export async function getActiveConsultation(): Promise<GetActiveConsultationResu
       .maybeSingle();
 
     if (error) {
-      console.error("Failed to fetch active consultation", {
+      console.error("Failed to fetch latest draft consultation", {
         patientId: patient.id,
         error,
       });
@@ -88,7 +87,7 @@ export async function getActiveConsultation(): Promise<GetActiveConsultationResu
       consultation,
     };
   } catch (error) {
-    console.error("Failed to fetch active consultation", {
+    console.error("Failed to fetch latest draft consultation", {
       patientId: patient.id,
       error,
     });
@@ -241,9 +240,7 @@ export async function getConsultationFormValues(
                 : lifestyleAssessment.recent_significant_weight_change
                   ? "yes"
                   : "no",
-            smoking: toSmokingFormValue(
-              lifestyleAssessment?.smoking_status,
-            ),
+            smoking: toSmokingFormValue(lifestyleAssessment?.smoking_status),
             alcohol: toAlcoholFormValue(lifestyleAssessment?.alcohol_use),
             additionalNotes:
               lifestyleAssessment?.additional_health_information ?? "",

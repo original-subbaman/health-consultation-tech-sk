@@ -1,11 +1,11 @@
 import BookConsultationForm from "@/app/(portals)/patient/book-consultation/BookConsultationForm";
 import {
-  getActiveConsultation,
+  getLatestDraftConsultation,
   getConsultationFormValues,
 } from "@/lib/data/consultation";
 
 export default async function BookConsultationPage() {
-  const result = await getActiveConsultation();
+  const result = await getLatestDraftConsultation();
 
   if (!result.success) {
     return (
