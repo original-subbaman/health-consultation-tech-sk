@@ -8,6 +8,7 @@ import {
   type ConsultationFormValues,
 } from "@/components/book-consultation/consultation-form";
 import PatientVitals from "@/components/book-consultation/PatientVitals";
+import ReviewConsultation from "@/components/book-consultation/ReviewConsultation";
 import { useConsultationStepSavers } from "@/hooks/useConsultationStepSavers";
 import {
   ArrowLeft,
@@ -19,7 +20,7 @@ import {
 import { useCallback, useEffect } from "react";
 import { FieldPath, FormProvider, useForm } from "react-hook-form";
 import { GetConsultationFormValuesResult } from "@/lib/data/consultation";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import LifestyleSignals from "@/components/book-consultation/LifestyleSignals";
 
 const steps = [
@@ -195,6 +196,7 @@ export default function BookConsultationForm({
   consultationId: string;
   formValues: GetConsultationFormValuesResult;
 }) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const stepIndex = STEP_PARAMS.findIndex(
     (step) => step === searchParams.get("step"),
@@ -262,6 +264,20 @@ export default function BookConsultationForm({
 
     navigateToStep(currentStep + 1);
   }
+
+  async function handleSubmitConsultation() {
+    if (isSaving) {
+      return;
+    }
+
+    const didSubmit = await saveStep(steps.length);
+
+    if (didSubmit) {
+      router.push("/patient/dashboard");
+      router.refresh();
+    }
+  }
+
   return (
     <FormProvider {...form}>
       <div className="flex w-full flex-col gap-8">
@@ -281,6 +297,12 @@ export default function BookConsultationForm({
           {currentStep === 3 && <CurrentIssueTrend />}
           {currentStep === 4 && <MedicalHistory />}
           {currentStep === 5 && <LifestyleSignals />}
+          {currentStep === 6 && (
+            <ReviewConsultation
+              isSubmitting={isSaving}
+              onSubmit={handleSubmitConsultation}
+            />
+          )}
 
           <div className="flex flex-col items-center justify-between gap-4 py-4 sm:flex-row">
             <NavigationArrowButton
@@ -291,13 +313,15 @@ export default function BookConsultationForm({
               type="button"
             />
 
-            <NavigationArrowButton
-              label="Next Step"
-              direction="right"
-              isLoading={isSaving}
-              onClick={handleNextStep}
-              type="button"
-            />
+            {currentStep < steps.length && (
+              <NavigationArrowButton
+                label="Next Step"
+                direction="right"
+                isLoading={isSaving}
+                onClick={handleNextStep}
+                type="button"
+              />
+            )}
           </div>
           {saveError && (
             <p className="text-label-md text-error" role="alert">

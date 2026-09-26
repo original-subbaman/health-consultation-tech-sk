@@ -9,6 +9,7 @@ import {
   savePatientAllergies,
   savePatientMedications,
   savePatientVitals,
+  submitConsultation,
 } from "@/actions/consultations";
 import type { ConsultationFormValues } from "@/components/book-consultation/consultation-form";
 import { useCallback, useMemo, useState } from "react";
@@ -103,6 +104,7 @@ export function useConsultationStepSavers({
           ...getValues("medicalHistory.lifestyle"),
           consultationId,
         }),
+      6: () => submitConsultation(consultationId),
     }),
     [consultationId, getValues, setValue],
   );

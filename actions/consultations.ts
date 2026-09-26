@@ -20,6 +20,7 @@ import {
   medicationsSchema,
   type PatientMeasurements,
   patientMeasurementsSchema,
+  updateConsultationStatusSchema,
 } from "@/lib/validation/consultation";
 
 type ConsultationSummary = Pick<
@@ -721,6 +722,68 @@ export async function saveLifestyleAssessment(input: LifestyleAssessment) {
     return {
       success: false,
       message: "Lifestyle assessment could not be saved",
+    };
+  }
+}
+
+export async function submitConsultation(consultationId: string) {
+  const patient = await requirePatient();
+  const validationResult = updateConsultationStatusSchema.safeParse({
+    consultationId,
+    status: "submitted",
+  });
+
+  if (!validationResult.success) {
+    return {
+      success: false,
+      message:
+        validationResult.error.issues[0]?.message ?? "Invalid consultation",
+    };
+  }
+
+  try {
+    const client = await createClient();
+    const submittedAt = new Date().toISOString();
+    const { data: consultation, error } = await client
+      .from("consultations")
+      .update({
+        status: "submitted",
+        submitted_at: submittedAt,
+        updated_at: submittedAt,
+      })
+      .eq("id", validationResult.data.consultationId)
+      .eq("patient_id", patient.id)
+      .eq("status", "draft")
+      .select("id")
+      .maybeSingle();
+
+    if (error || !consultation) {
+      console.error("Failed to submit consultation", {
+        consultationId: validationResult.data.consultationId,
+        patientId: patient.id,
+        error,
+      });
+
+      return {
+        success: false,
+        message: "Could not submit the consultation",
+      };
+    }
+
+    return {
+      success: true,
+      message: "Consultation submitted successfully",
+    };
+  } catch (error) {
+    console.error("Failed to submit consultation", {
+      consultationId: validationResult.data.consultationId,
+      patientId: patient.id,
+      error,
+    });
+
+    return {
+      success: false,
+      message: "Consultation could not be submitted",
     };
   }
 }
