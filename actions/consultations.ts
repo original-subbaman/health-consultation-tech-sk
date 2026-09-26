@@ -14,6 +14,8 @@ import {
   type MedicalHistory,
   medicalHistorySchema,
   medicalRecordUploadSchema,
+  type LifestyleAssessment,
+  lifestyleAssessmentSchema,
   type Medications,
   medicationsSchema,
   type PatientMeasurements,
@@ -642,6 +644,83 @@ export async function saveMedicalRecords(formData: FormData) {
     return {
       success: false,
       message: "Medical record could not be uploaded",
+    };
+  }
+}
+
+export async function saveLifestyleAssessment(input: LifestyleAssessment) {
+  const patient = await requirePatient();
+  const validationResult = lifestyleAssessmentSchema.safeParse(input);
+
+  if (!validationResult.success) {
+    return {
+      success: false,
+      message:
+        validationResult.error.issues[0]?.message ??
+        "Invalid lifestyle assessment",
+    };
+  }
+
+  const validatedAssessment = validationResult.data;
+
+  try {
+    const client = await createClient();
+    const { data: consultation, error: consultationError } = await client
+      .from("consultations")
+      .select("id")
+      .eq("id", validatedAssessment.consultationId)
+      .eq("patient_id", patient.id)
+      .eq("status", "draft")
+      .maybeSingle();
+
+    if (consultationError || !consultation) {
+      return {
+        success: false,
+        message: "Invalid consultation",
+      };
+    }
+
+    const { error } = await client.from("lifestyle_assessments").upsert(
+      {
+        consultation_id: consultation.id,
+        recent_significant_weight_change:
+          validatedAssessment.recentWeightChange === "yes",
+        smoking_status: validatedAssessment.smoking,
+        alcohol_use: validatedAssessment.alcohol,
+        additional_health_information:
+          validatedAssessment.additionalNotes || null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "consultation_id" },
+    );
+
+    if (error) {
+      console.error("Failed to save lifestyle assessment", {
+        consultationId: consultation.id,
+        patientId: patient.id,
+        error,
+      });
+
+      return {
+        success: false,
+        message: "Could not save the lifestyle assessment",
+      };
+    }
+
+    return {
+      success: true,
+      message: "Lifestyle assessment saved successfully",
+    };
+  } catch (error) {
+    console.error("Failed to save lifestyle assessment", {
+      consultationId: validatedAssessment.consultationId,
+      patientId: patient.id,
+      error,
+    });
+
+    return {
+      success: false,
+      message: "Lifestyle assessment could not be saved",
     };
   }
 }

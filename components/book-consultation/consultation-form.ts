@@ -1,3 +1,5 @@
+import type { LifestyleAssessmentFormValues } from "@/lib/validation/consultation";
+
 type MedicationFormValue = {
   id?: string;
   medicationName: string;
@@ -44,12 +46,7 @@ export type ConsultationFormValues = {
     medications: MedicationFormValue[];
     allergies: AllergyFormValue[];
     medicalRecords: File[];
-    lifestyle: {
-      recentWeightChange: "" | "yes" | "no";
-      smoking: "" | "never" | "former" | "current";
-      alcohol: "" | "none" | "occasional" | "regular";
-      additionalNotes: string;
-    };
+    lifestyle: LifestyleAssessmentFormValues;
   };
 };
 

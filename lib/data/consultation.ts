@@ -28,6 +28,26 @@ export type GetConsultationFormValuesResult =
       message: string;
     };
 
+type LifestyleFormValues = ConsultationFormValues["medicalHistory"]["lifestyle"];
+
+function toSmokingFormValue(
+  value: string | null | undefined,
+): LifestyleFormValues["smoking"] {
+  return value === "never" || value === "former" || value === "current"
+    ? value
+    : "";
+}
+
+function toAlcoholFormValue(
+  value: string | null | undefined,
+): LifestyleFormValues["alcohol"] {
+  return value === "none" ||
+    value === "occasional" ||
+    value === "regular"
+    ? value
+    : "";
+}
+
 export async function getActiveConsultation(): Promise<GetActiveConsultationResult> {
   const patient = await requirePatient();
 
@@ -131,6 +151,12 @@ export async function getConsultationFormValues(
             id,
             allergy_name,
             details
+          ),
+          lifestyle_assessments (
+            recent_significant_weight_change,
+            smoking_status,
+            alcohol_use,
+            additional_health_information
           )
         `,
       )
@@ -149,6 +175,7 @@ export async function getConsultationFormValues(
     const measurement = consultation.patient_measurements[0];
     const intake = consultation.consultation_intakes;
     const medicalHistory = consultation.patient_medical_history;
+    const lifestyleAssessment = consultation.lifestyle_assessments;
 
     return {
       success: true,
@@ -207,6 +234,20 @@ export async function getConsultationFormValues(
             allergyName: allergy.allergy_name,
             details: allergy.details ?? "",
           })),
+          lifestyle: {
+            recentWeightChange:
+              lifestyleAssessment?.recent_significant_weight_change == null
+                ? ""
+                : lifestyleAssessment.recent_significant_weight_change
+                  ? "yes"
+                  : "no",
+            smoking: toSmokingFormValue(
+              lifestyleAssessment?.smoking_status,
+            ),
+            alcohol: toAlcoholFormValue(lifestyleAssessment?.alcohol_use),
+            additionalNotes:
+              lifestyleAssessment?.additional_health_information ?? "",
+          },
         },
       },
     };

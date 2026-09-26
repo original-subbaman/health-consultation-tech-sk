@@ -26,7 +26,8 @@ const steps = [
   ["Patient Information", "Patient Vitals & Measurements"],
   ["Baseline Snapshot", "Current chief complaint"],
   ["Symptoms & Trends", "Progression metrics"],
-  ["Medical History", "Meds & lifestyle"],
+  ["Medical History", "Medication, allergies, existing conditions"],
+  ["Lifestyle Signals", "Dietary restrictions, alcohol or smoking habits"],
   ["Review & Consent", "Clinician match"],
 ];
 
@@ -63,15 +64,35 @@ const stepFields: Partial<Record<number, FieldPath<ConsultationFormValues>[]>> =
       "medicalHistory.medications",
       "medicalHistory.allergies",
     ],
+    5: [
+      "medicalHistory.lifestyle.recentWeightChange",
+      "medicalHistory.lifestyle.smoking",
+      "medicalHistory.lifestyle.alcohol",
+      "medicalHistory.lifestyle.additionalNotes",
+    ],
   };
 
-function HeadingSection({ currentStep }: { currentStep: number }) {
+function HeadingSection({
+  currentStep,
+  totalSteps,
+}: {
+  currentStep: number;
+  totalSteps: number;
+}) {
+  function calculateFormProgress() {
+    if (totalSteps === 0) return 0;
+
+    return Math.round((currentStep / totalSteps) * 100);
+  }
+
+  const progress = calculateFormProgress();
+
   return (
     <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
       <div>
         <div className="mb-1 flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center rounded-full bg-primary-container/15 px-2.5 py-0.5 text-label-sm font-semibold text-primary">
-            Step {currentStep} of 5 • In focus
+            Step {currentStep} of {totalSteps} • In focus
           </span>
         </div>
         <h1 className="font-headline-md text-headline-md tracking-tight text-on-surface">
@@ -82,20 +103,23 @@ function HeadingSection({ currentStep }: { currentStep: number }) {
       <div className="flex min-w-60 items-center gap-4">
         <div className="flex flex-1 flex-col gap-1.5">
           <div className="flex items-center justify-between text-label-sm">
-            <span className="font-medium text-on-surface-variant">
+            <span className="font-medium text-on-surface-variant mr-2">
               Session progress
             </span>
-            <span className="font-bold text-primary">45%</span>
+            <span className="font-bold text-primary">{progress}%</span>
           </div>
           <div
-            aria-label="Session progress: 45%"
+            aria-label={`Session progress: ${progress}%`}
             aria-valuemax={100}
             aria-valuemin={0}
-            aria-valuenow={45}
+            aria-valuenow={progress}
             className="h-2 w-full overflow-hidden rounded-full bg-surface-container-high"
             role="progressbar"
           >
-            <div className="h-full w-[45%] rounded-full bg-primary" />
+            <div
+              className="h-full rounded-full bg-primary transition-[width]"
+              style={{ width: `${progress}%` }}
+            />
           </div>
         </div>
         <button
@@ -112,9 +136,9 @@ function HeadingSection({ currentStep }: { currentStep: number }) {
 
 function ConsultationStepper({ currentStep }: { currentStep: number }) {
   return (
-    <ol className="grid grid-cols-2 gap-2 pt-2 sm:grid-cols-3 lg:grid-cols-5">
+    <ol className="grid grid-cols-2 gap-2 pt-2 sm:grid-cols-3 lg:grid-cols-6">
       {steps.map(([title, subtitle], index) => {
-        const complete = index === 0;
+        const complete = index < currentStep - 1;
         const active = index === currentStep - 1;
 
         return (
@@ -124,7 +148,7 @@ function ConsultationStepper({ currentStep }: { currentStep: number }) {
               active
                 ? "bg-primary-container text-on-primary shadow-sm"
                 : "bg-surface-container-low/60 text-on-surface"
-            } ${index === 3 ? "hidden sm:flex" : ""} ${index === 4 ? "hidden lg:flex" : ""}`}
+            }`}
             key={title}
           >
             <span
@@ -222,11 +246,9 @@ export default function BookConsultationForm({
     }
 
     const fields = stepFields[currentStep];
-    console.log("🚀 ~ handleNextStep ~ fields:", fields);
     const isStepValid = fields
       ? await form.trigger(fields, { shouldFocus: true })
       : true;
-    console.log("🚀 ~ handleNextStep ~ isStepValid:", isStepValid);
 
     if (!isStepValid) {
       return;
@@ -245,7 +267,10 @@ export default function BookConsultationForm({
       <div className="flex w-full flex-col gap-8">
         <section className="rounded-xl bg-surface-container-lowest p-5 shadow-sm sm:p-6">
           <div className="flex flex-col gap-5">
-            <HeadingSection currentStep={currentStep} />
+            <HeadingSection
+              currentStep={currentStep}
+              totalSteps={steps.length}
+            />
             <ConsultationStepper currentStep={currentStep} />
           </div>
         </section>

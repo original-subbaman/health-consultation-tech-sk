@@ -225,10 +225,7 @@ export type Database = {
           alcohol_use: string | null
           consultation_id: string
           created_at: string
-          dietary_restrictions: string | null
           id: string
-          major_life_changes: string | null
-          other_health_factors: string | null
           recent_significant_weight_change: boolean | null
           smoking_status: string | null
           updated_at: string
@@ -238,10 +235,7 @@ export type Database = {
           alcohol_use?: string | null
           consultation_id: string
           created_at?: string
-          dietary_restrictions?: string | null
           id?: string
-          major_life_changes?: string | null
-          other_health_factors?: string | null
           recent_significant_weight_change?: boolean | null
           smoking_status?: string | null
           updated_at?: string
@@ -251,10 +245,7 @@ export type Database = {
           alcohol_use?: string | null
           consultation_id?: string
           created_at?: string
-          dietary_restrictions?: string | null
           id?: string
-          major_life_changes?: string | null
-          other_health_factors?: string | null
           recent_significant_weight_change?: boolean | null
           smoking_status?: string | null
           updated_at?: string

@@ -196,6 +196,29 @@ export const medicalRecordUploadSchema = z
     }
   });
 
+export const lifestyleAssessmentSchema = z.object({
+  consultationId: z.uuid("Invalid consultation ID."),
+  recentWeightChange: z
+    .enum(["", "yes", "no"])
+    .refine((value) => value !== "", {
+      message: "Select whether your weight changed recently.",
+    }),
+  smoking: z
+    .enum(["", "never", "former", "current"])
+    .refine((value) => value !== "", {
+      message: "Select your smoking status.",
+    }),
+  alcohol: z
+    .enum(["", "none", "occasional", "regular"])
+    .refine((value) => value !== "", {
+      message: "Select your alcohol use.",
+    }),
+  additionalNotes: z
+    .string()
+    .trim()
+    .max(1000, "Additional information must be 1000 characters or fewer."),
+});
+
 export type ConsultationStatus = z.infer<typeof consultationStatusSchema>;
 export type BookConsultationInput = z.infer<typeof bookConsultationSchema>;
 export type UpdateConsultationStatusInput = z.infer<
@@ -209,3 +232,8 @@ export type Medication = z.infer<typeof medicationSchema>;
 export type Medications = z.infer<typeof medicationsSchema>;
 export type Allergy = z.infer<typeof allergySchema>;
 export type Allergies = z.infer<typeof allergiesSchema>;
+export type LifestyleAssessment = z.input<typeof lifestyleAssessmentSchema>;
+export type LifestyleAssessmentFormValues = Omit<
+  LifestyleAssessment,
+  "consultationId"
+>;

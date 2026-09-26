@@ -3,6 +3,7 @@
 import {
   saveConsultationIntakes,
   saveCurrentIssueTrend,
+  saveLifestyleAssessment,
   saveMedicalHistory,
   saveMedicalRecords,
   savePatientAllergies,
@@ -97,6 +98,11 @@ export function useConsultationStepSavers({
 
         return medicalRecordResult;
       },
+      5: () =>
+        saveLifestyleAssessment({
+          ...getValues("medicalHistory.lifestyle"),
+          consultationId,
+        }),
     }),
     [consultationId, getValues, setValue],
   );
