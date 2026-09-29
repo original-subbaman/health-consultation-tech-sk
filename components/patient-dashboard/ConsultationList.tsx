@@ -1,22 +1,15 @@
 import {
-  getPatientConsultation,
+  getPatientConsultations,
   type PatientConsultationListItem,
   type PatientConsultationStatus,
 } from "@/lib/data/consultation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import Link from "next/link";
-
-const consultationStatuses: Array<{
-  value: PatientConsultationStatus;
-  label: string;
-}> = [
-  { value: "draft", label: "Draft" },
-  { value: "submitted", label: "Submitted" },
-  { value: "completed", label: "Completed" },
-];
+import { Button, buttonStyles } from "@/components/ui/button";
 
 export type ConsultationListFilters = {
   page?: number;
+  chiefComplaint?: string;
   doctorName?: string;
   submittedDate?: string;
   status?: PatientConsultationStatus;
@@ -24,6 +17,8 @@ export type ConsultationListFilters = {
 
 type ConsultationListProps = {
   filters?: ConsultationListFilters;
+  basePath?: string;
+  showViewMore?: boolean;
 };
 
 function formatConsultationDate(value: string) {
@@ -52,105 +47,72 @@ function ConsultationCard({
   const dateLabel = consultation.submittedAt ? "Submitted" : "Created";
 
   return (
-    <article className="flex flex-col gap-4 rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-ambient sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="font-label-md text-label-md text-on-surface">
-            {consultation.doctor?.fullName ?? "Doctor not assigned"}
-          </h3>
-          <span
-            className={`rounded-full px-2.5 py-1 font-label-sm text-label-sm capitalize ${
-              consultation.status === "submitted"
-                ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300"
-                : "bg-surface-container-high text-on-surface-variant"
-            }`}
-          >
-            {consultation.status}
+    <article
+      className="flex flex-col gap-4 rounded-lg 
+      border border-outline-variant bg-surface-container-lowest 
+      p-5 shadow-ambient"
+    >
+      <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-label-md text-label-md text-on-surface">
+              {consultation.doctor?.fullName ?? "Doctor not assigned"}
+            </h3>
+            <span
+              className={`rounded-full px-2.5 py-1 font-label-sm text-label-sm capitalize ${
+                consultation.status === "submitted"
+                  ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300"
+                  : "bg-surface-container-high text-on-surface-variant"
+              }`}
+            >
+              {consultation.status}
+            </span>
+          </div>
+          <p className="mt-1 font-body-md text-body-md text-on-surface-variant">
+            {consultation.chiefComplaint?.slice(0, 15)}
+          </p>
+        </div>
+        <div className="flex flex-col sm:items-end">
+          <span className="font-label-sm text-label-sm text-on-surface-variant">
+            {dateLabel}: {formatConsultationDate(displayDate)}
+          </span>
+          <span className="font-label-sm text-label-sm text-on-surface-variant">
+            {formatConsultationTime(displayDate)}
           </span>
         </div>
-        <p className="mt-1 font-body-md text-body-md text-on-surface-variant">
-          {consultation.chiefComplaint?.slice(0, 15)}
-        </p>
       </div>
-      <div className="flex flex-col sm:items-end">
-        <span className="font-label-sm text-label-sm text-on-surface-variant">
-          {dateLabel}: {formatConsultationDate(displayDate)}
-        </span>
-        <span className="font-label-sm text-label-sm text-on-surface-variant">
-          {formatConsultationTime(displayDate)}
-        </span>
+      <div className="flex w-full flex-wrap items-center justify-end gap-2">
+        <Link
+          href={`/patient/consultations/${consultation.id}`}
+          className={buttonStyles()}
+        >
+          View Details
+        </Link>
+        <Button
+          variant="secondary"
+          disabled
+          aria-describedby={`summary-unavailable-${consultation.id}`}
+        >
+          <Download aria-hidden="true" className="size-4" />
+          Download Summary
+        </Button>
       </div>
     </article>
   );
 }
 
-function ConsultationFilters({
-  filters,
-}: {
-  filters: ConsultationListFilters;
-}) {
-  return (
-    <form
-      action="/patient/dashboard#consultations"
-      className="grid w-full gap-3 sm:grid-cols-2 lg:w-auto lg:grid-cols-[minmax(12rem,1fr)_auto_auto_auto] lg:items-end"
-      method="get"
-    >
-      <label className="flex flex-col gap-1 text-label-sm text-on-surface-variant">
-        Doctor name
-        <input
-          className="rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 text-body-md text-on-surface outline-none transition focus:border-primary focus:ring-2 focus:ring-primary-fixed"
-          defaultValue={filters.doctorName}
-          name="doctor"
-          placeholder="Search by name"
-          type="search"
-        />
-      </label>
-      <label className="flex flex-col gap-1 text-label-sm text-on-surface-variant">
-        Submitted date
-        <input
-          className="rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 text-body-md text-on-surface outline-none transition focus:border-primary focus:ring-2 focus:ring-primary-fixed"
-          defaultValue={filters.submittedDate}
-          name="submittedDate"
-          type="date"
-        />
-      </label>
-      <label className="flex flex-col gap-1 text-label-sm text-on-surface-variant">
-        Status
-        <select
-          className="rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 text-body-md text-on-surface outline-none transition focus:border-primary focus:ring-2 focus:ring-primary-fixed"
-          defaultValue={filters.status ?? ""}
-          name="status"
-        >
-          <option value="">All statuses</option>
-          {consultationStatuses.map(({ label, value }) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <div className="flex items-center gap-2">
-        <button
-          className="rounded-lg bg-primary px-4 py-2 font-label-md text-label-md text-on-primary outline-none transition-colors hover:bg-primary-container focus-visible:ring-3 focus-visible:ring-primary-fixed/60"
-          type="submit"
-        >
-          Apply
-        </button>
-        <Link
-          className="rounded-lg px-3 py-2 font-label-md text-label-md text-primary outline-none transition-colors hover:bg-primary-fixed-dim focus-visible:ring-3 focus-visible:ring-primary-fixed/60"
-          href="/patient/dashboard#consultations"
-        >
-          Clear
-        </Link>
-      </div>
-    </form>
-  );
-}
-
-function getPaginationHref(page: number, filters: ConsultationListFilters) {
+function getPaginationHref(
+  page: number,
+  filters: ConsultationListFilters,
+  basePath: string,
+) {
   const params = new URLSearchParams();
 
   params.set("consultationPage", String(page));
+
+  if (filters.chiefComplaint) {
+    params.set("chiefComplaint", filters.chiefComplaint);
+  }
 
   if (filters.doctorName) {
     params.set("doctor", filters.doctorName);
@@ -164,15 +126,18 @@ function getPaginationHref(page: number, filters: ConsultationListFilters) {
     params.set("status", filters.status);
   }
 
-  return `/patient/dashboard?${params.toString()}#consultations`;
+  return `${basePath}?${params.toString()}#consultations`;
 }
 
 export default async function ConsultationList({
   filters = {},
+  basePath = "/patient/dashboard",
+  showViewMore = true,
 }: ConsultationListProps) {
-  const result = await getPatientConsultation({
+  const result = await getPatientConsultations({
     page: filters.page,
     pageSize: 10,
+    chiefComplaint: filters.chiefComplaint,
     doctorName: filters.doctorName,
     submittedDate: filters.submittedDate,
     status: filters.status,
@@ -184,7 +149,11 @@ export default async function ConsultationList({
         <h2 className="font-headline-lg text-headline-lg text-on-surface">
           Your Consultations
         </h2>
-        <ConsultationFilters filters={filters} />
+        {showViewMore && (
+          <Link href="/patient/consultations" className={buttonStyles()}>
+            View More
+          </Link>
+        )}
       </div>
 
       {!result.success ? (
@@ -217,8 +186,12 @@ export default async function ConsultationList({
             >
               {result.pagination.page > 1 ? (
                 <Link
-                  className="inline-flex items-center gap-1 rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 font-label-md text-label-md text-on-surface outline-none transition-colors hover:bg-surface-container-high focus-visible:ring-3 focus-visible:ring-primary-fixed/60"
-                  href={getPaginationHref(result.pagination.page - 1, filters)}
+                  className={buttonStyles({ variant: "secondary" })}
+                  href={getPaginationHref(
+                    result.pagination.page - 1,
+                    filters,
+                    basePath,
+                  )}
                 >
                   <ChevronLeft aria-hidden="true" className="size-4" />
                   Previous
@@ -233,8 +206,12 @@ export default async function ConsultationList({
 
               {result.pagination.page < result.pagination.totalPages ? (
                 <Link
-                  className="inline-flex items-center gap-1 rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 font-label-md text-label-md text-on-surface outline-none transition-colors hover:bg-surface-container-high focus-visible:ring-3 focus-visible:ring-primary-fixed/60"
-                  href={getPaginationHref(result.pagination.page + 1, filters)}
+                  className={buttonStyles({ variant: "secondary" })}
+                  href={getPaginationHref(
+                    result.pagination.page + 1,
+                    filters,
+                    basePath,
+                  )}
                 >
                   Next
                   <ChevronRight aria-hidden="true" className="size-4" />

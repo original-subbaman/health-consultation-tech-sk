@@ -20,6 +20,7 @@ export type PatientConsultationStatus =
 export type GetPatientConsultationOptions = {
   page?: number;
   pageSize?: number;
+  chiefComplaint?: string;
   doctorName?: string;
   submittedDate?: string;
   status?: PatientConsultationStatus;
@@ -227,7 +228,7 @@ export async function getActiveConsultation() {
   }
 }
 
-export async function getPatientConsultation(
+export async function getPatientConsultations(
   options: GetPatientConsultationOptions = {},
 ): Promise<GetPatientConsultationResult> {
   const patient = await requirePatient();
@@ -235,6 +236,7 @@ export async function getPatientConsultation(
   const pageSize = normalizePositiveInteger(options.pageSize, 10, 100);
   const doctorName = options.doctorName?.trim();
   const submittedDate = options.submittedDate?.trim();
+  const chiefComplaint = options.chiefComplaint?.trim();
 
   if (
     options.status &&
@@ -332,6 +334,12 @@ export async function getPatientConsultation(
       query = query
         .gte("submitted_at", submittedDateRange.start)
         .lt("submitted_at", submittedDateRange.end);
+    }
+
+    if (chiefComplaint) {
+      query = query
+        .ilike("consultation_intakes.chief_complaint", `%${chiefComplaint}%`)
+        .not("consultation_intakes", "is", null);
     }
 
     const { data, error, count } = await query
