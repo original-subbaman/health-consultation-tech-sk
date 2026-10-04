@@ -10,6 +10,33 @@ export const bookConsultationSchema = z.object({
   status: z.enum(["draft", "submitted"]),
 });
 
+export const adminConsultationOptionsSchema = z.object({
+  page: z
+    .number()
+    .optional()
+    .catch(1)
+    .transform((value) => Math.max(1, Math.trunc(value ?? 1))),
+  pageSize: z
+    .number()
+    .optional()
+    .catch(10)
+    .transform((value) => Math.min(100, Math.max(1, Math.trunc(value ?? 10)))),
+  doctorName: z.string().trim().optional(),
+  chiefComplaint: z.string().trim().optional(),
+  submittedDate: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => value || undefined)
+    .pipe(
+      z.iso.date("Submitted date must use the YYYY-MM-DD format").optional(),
+    ),
+});
+
+export type GetAdminConsultationOptions = z.input<
+  typeof adminConsultationOptionsSchema
+>;
+
 export const updateConsultationStatusSchema = z.object({
   consultationId: z.uuid("Invalid consultation ID."),
   status: consultationStatusSchema,

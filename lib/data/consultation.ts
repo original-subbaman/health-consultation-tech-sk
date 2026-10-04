@@ -5,8 +5,12 @@ import {
   type ConsultationFormValues,
 } from "@/components/book-consultation/consultation-form";
 import type { Tables } from "@/database.types";
-import { requirePatient } from "@/lib/auth/auth";
+import { requireAdmin, requirePatient } from "@/lib/auth/auth";
 import { createClient } from "@/lib/supabase/server";
+import {
+  adminConsultationOptionsSchema,
+  type GetAdminConsultationOptions,
+} from "@/lib/validation/consultation";
 
 const PATIENT_CONSULTATION_STATUSES = [
   "draft",
@@ -24,6 +28,7 @@ export type GetPatientConsultationOptions = {
   doctorName?: string;
   submittedDate?: string;
   status?: PatientConsultationStatus;
+  candidateId?: string;
 };
 
 export type PatientConsultationListItem = {
@@ -553,6 +558,158 @@ export async function getConsultationFormValues(
     return {
       success: false,
       message: "Form values could not be loaded at the moment",
+    };
+  }
+}
+
+export async function getAdminConsultations(
+  options: GetAdminConsultationOptions = {},
+) {
+  await requireAdmin();
+
+  const parsed = adminConsultationOptionsSchema.safeParse(options);
+  if (!parsed.success) {
+    return {
+      success: false,
+      message:
+        parsed.error.issues[0]?.message ?? "Invalid consultation filters",
+    };
+  }
+
+  const { page, pageSize, doctorName, submittedDate, chiefComplaint } =
+    parsed.data;
+  const submittedDateRange = submittedDate
+    ? getUtcDateRange(submittedDate)
+    : null;
+
+  try {
+    const client = await createClient();
+    let matchingDoctorIds: string[] | undefined;
+
+    if (doctorName) {
+      const { data: doctors, error: doctorsError } = await client
+        .from("profiles")
+        .select("id")
+        .eq("role", "consultant")
+        .ilike("full_name", `%${doctorName}%`);
+
+      if (doctorsError) {
+        console.error("Failed to filter consultations by doctor", {
+          error: doctorsError,
+        });
+
+        return {
+          success: false,
+          message: "Consultations could not be loaded at the moment",
+        };
+      }
+
+      matchingDoctorIds = doctors.map(({ id }) => id);
+
+      if (matchingDoctorIds.length === 0) {
+        return {
+          success: true,
+          consultations: [],
+          pagination: {
+            page,
+            pageSize,
+            totalCount: 0,
+            totalPages: 0,
+          },
+        };
+      }
+    }
+
+    const offset = (page - 1) * pageSize;
+    let query = client
+      .from("consultations")
+      .select(
+        `
+          id,
+          status,
+          created_at,
+          updated_at,
+          submitted_at,
+          completed_at,
+          patient:profiles!consultations_patient_id_fkey (
+            full_name
+          ),
+          doctor:profiles!consultations_doctor_id_fkey (
+            id,
+            full_name,
+            doctor_profiles (
+              specialty
+            )
+          ),
+          consultation_intakes(chief_complaint)
+        `,
+        { count: "exact" },
+      )
+      .eq("status", "submitted");
+
+    if (matchingDoctorIds) {
+      query = query.in("doctor_id", matchingDoctorIds);
+    }
+
+    if (submittedDateRange) {
+      query = query
+        .gte("submitted_at", submittedDateRange.start)
+        .lt("submitted_at", submittedDateRange.end);
+    }
+
+    if (chiefComplaint) {
+      query = query
+        .ilike("consultation_intakes.chief_complaint", `%${chiefComplaint}%`)
+        .not("consultation_intakes", "is", null);
+    }
+
+    const { data, error, count } = await query
+      .order("created_at", { ascending: false })
+      .range(offset, offset + pageSize - 1);
+
+    if (error) {
+      console.error("Failed to fetch consultations", error);
+
+      return {
+        success: false,
+        message: "Consultations could not be loaded at the moment",
+      };
+    }
+
+    const totalCount = count ?? 0;
+
+    return {
+      success: true,
+      consultations: data.map((consultation) => ({
+        id: consultation.id,
+        patientName: consultation.patient?.full_name ?? null,
+        status: consultation.status,
+        createdAt: consultation.created_at,
+        updatedAt: consultation.updated_at,
+        submittedAt: consultation.submitted_at,
+        completedAt: consultation.completed_at,
+        chiefComplaint:
+          consultation.consultation_intakes?.chief_complaint ?? null,
+        doctor: consultation.doctor
+          ? {
+              id: consultation.doctor.id,
+              fullName: consultation.doctor.full_name,
+              specialty: consultation.doctor.doctor_profiles?.specialty ?? null,
+            }
+          : null,
+      })),
+      pagination: {
+        page,
+        pageSize,
+        totalCount,
+        totalPages: Math.ceil(totalCount / pageSize),
+      },
+    };
+  } catch (error) {
+    console.log("🚀 ~ getAdminConsultations ~ error:", error);
+    return {
+      success: false,
+      message: "Consultations could not be loaded",
     };
   }
 }
