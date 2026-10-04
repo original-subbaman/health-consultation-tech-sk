@@ -3,6 +3,7 @@ import { z } from "zod";
 export const consultationStatusSchema = z.enum([
   "draft",
   "submitted",
+  "assigned",
   "completed",
 ]);
 
@@ -10,7 +11,13 @@ export const bookConsultationSchema = z.object({
   status: z.enum(["draft", "submitted"]),
 });
 
+export const adminConsultationStatusSchema = consultationStatusSchema.exclude([
+  "draft",
+]);
+
 export const adminConsultationOptionsSchema = z.object({
+  status: z.array(adminConsultationStatusSchema).default([]),
+  sortBy: z.enum(["desc", "asc"]).default("desc"),
   page: z
     .number()
     .optional()

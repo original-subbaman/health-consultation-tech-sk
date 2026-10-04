@@ -576,8 +576,15 @@ export async function getAdminConsultations(
     };
   }
 
-  const { page, pageSize, doctorName, submittedDate, chiefComplaint } =
-    parsed.data;
+  const {
+    page,
+    pageSize,
+    doctorName,
+    submittedDate,
+    chiefComplaint,
+    sortBy,
+    status,
+  } = parsed.data;
   const submittedDateRange = submittedDate
     ? getUtcDateRange(submittedDate)
     : null;
@@ -644,8 +651,13 @@ export async function getAdminConsultations(
           consultation_intakes(chief_complaint)
         `,
         { count: "exact" },
-      )
-      .eq("status", "submitted");
+      );
+
+    query = query.neq("status", "draft");
+
+    if (status.length) {
+      query = query.in("status", status);
+    }
 
     if (matchingDoctorIds) {
       query = query.in("doctor_id", matchingDoctorIds);
@@ -664,7 +676,7 @@ export async function getAdminConsultations(
     }
 
     const { data, error, count } = await query
-      .order("created_at", { ascending: false })
+      .order("created_at", { ascending: sortBy === "asc" })
       .range(offset, offset + pageSize - 1);
 
     if (error) {
