@@ -3,6 +3,7 @@ import { Eye } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { GetAdminConsultationOptions } from "@/lib/validation/consultation";
+import { capitalize } from "@/lib/helper";
 
 type ConsultationRowProps = {
   id: string;
@@ -10,6 +11,7 @@ type ConsultationRowProps = {
   patientName: string;
   doctorAssigned: string;
   chiefComplaint: string;
+  status: string;
 };
 
 function ConsultationRow(
@@ -37,6 +39,7 @@ function ConsultationRow(
         </div>
       </td>
       <td className="px-4 py-4">{row.doctorAssigned}</td>
+      <td className="px-4 py-4">{row.status}</td>
       <td className="whitespace-nowrap px-4 py-4">
         <div className="flex flex-col">
           <span className="font-label-md text-label-md font-medium text-on-surface">
@@ -99,21 +102,52 @@ function ConsultationPagination({
     params.set("consultationPage", String(target));
     return `/admin/dashboard?${params.toString()}#consultations`;
   }
-  const linkClass = "rounded-lg bg-surface-container px-3 py-1 text-on-surface hover:bg-surface-container-high focus-visible:outline-2 focus-visible:outline-primary";
+  const linkClass =
+    "rounded-lg bg-surface-container px-3 py-1 text-on-surface hover:bg-surface-container-high focus-visible:outline-2 focus-visible:outline-primary";
 
   return (
     <div className="flex flex-col items-center justify-between gap-3 bg-surface-container-low p-4 font-label-sm text-label-sm text-on-surface-variant sm:flex-row">
-      <span>Showing {start} to {end} of {totalCount} consultations</span>
+      <span>
+        Showing {start} to {end} of {totalCount} consultations
+      </span>
       {totalPages > 1 && (
-        <nav className="flex flex-wrap items-center justify-center gap-1" aria-label="Consultation pages">
-          {page > 1 ? <Link href={href(page - 1)} className={linkClass}>Previous</Link> : <span aria-disabled="true" className={`${linkClass} opacity-50`}>Previous</span>}
+        <nav
+          className="flex flex-wrap items-center justify-center gap-1"
+          aria-label="Consultation pages"
+        >
+          {page > 1 ? (
+            <Link href={href(page - 1)} className={linkClass}>
+              Previous
+            </Link>
+          ) : (
+            <span aria-disabled="true" className={`${linkClass} opacity-50`}>
+              Previous
+            </span>
+          )}
           {pages.map((target) => (
-            <Link key={target} href={href(target)} aria-label={`Page ${target}`} aria-current={target === page ? "page" : undefined}
-              className={target === page ? "rounded-lg bg-primary px-3 py-1 font-medium text-on-primary" : linkClass}>
+            <Link
+              key={target}
+              href={href(target)}
+              aria-label={`Page ${target}`}
+              aria-current={target === page ? "page" : undefined}
+              className={
+                target === page
+                  ? "rounded-lg bg-primary px-3 py-1 font-medium text-on-primary"
+                  : linkClass
+              }
+            >
               {target}
             </Link>
           ))}
-          {page < totalPages ? <Link href={href(page + 1)} className={linkClass}>Next</Link> : <span aria-disabled="true" className={`${linkClass} opacity-50`}>Next</span>}
+          {page < totalPages ? (
+            <Link href={href(page + 1)} className={linkClass}>
+              Next
+            </Link>
+          ) : (
+            <span aria-disabled="true" className={`${linkClass} opacity-50`}>
+              Next
+            </span>
+          )}
         </nav>
       )}
     </div>
@@ -128,8 +162,19 @@ export default async function ConsultationList({
   queryString?: string;
 }) {
   const consultations = await getAdminConsultations(filters);
-  if (!consultations.success || !consultations.consultations || !consultations.pagination) {
-    return <p role="alert" className="rounded-lg bg-error-container p-4 text-on-error-container">{consultations.message ?? "Consultations could not be loaded"}</p>;
+  if (
+    !consultations.success ||
+    !consultations.consultations ||
+    !consultations.pagination
+  ) {
+    return (
+      <p
+        role="alert"
+        className="rounded-lg bg-error-container p-4 text-on-error-container"
+      >
+        {consultations.message ?? "Consultations could not be loaded"}
+      </p>
+    );
   }
   const rows = consultations.consultations;
   const pagination = consultations.pagination;
@@ -141,7 +186,10 @@ export default async function ConsultationList({
   }
 
   return (
-    <div id="consultations" className="scroll-mt-6 overflow-hidden rounded-xl bg-surface-container-lowest shadow-sm">
+    <div
+      id="consultations"
+      className="scroll-mt-6 overflow-hidden rounded-xl bg-surface-container-lowest shadow-sm"
+    >
       <div className="overflow-x-auto">
         <table className="w-full text-left">
           <thead>
@@ -156,6 +204,9 @@ export default async function ConsultationList({
                 Doctor Assigned
               </th>
               <th scope="col" className="px-4 py-3">
+                Status
+              </th>
+              <th scope="col" className="px-4 py-3">
                 Submitted At
               </th>
               <th scope="col" className="px-5 py-3 text-right">
@@ -164,7 +215,16 @@ export default async function ConsultationList({
             </tr>
           </thead>
           <tbody className="font-body-md text-body-md text-on-surface">
-            {rows.length === 0 && <tr><td colSpan={5} className="p-5 text-center text-on-surface-variant">No consultations found.</td></tr>}
+            {rows.length === 0 && (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="p-5 text-center text-on-surface-variant"
+                >
+                  No consultations found.
+                </td>
+              </tr>
+            )}
             {rows?.map((consultation) => (
               <ConsultationRow
                 key={consultation.id}
@@ -172,6 +232,11 @@ export default async function ConsultationList({
                 patientName={consultation.patientName ?? "Hidden"}
                 doctorAssigned={consultation.doctor?.fullName ?? "Not assigned"}
                 chiefComplaint={consultation.chiefComplaint ?? "Not provided"}
+                status={
+                  consultation.status
+                    ? capitalize(consultation.status)
+                    : "Not Available"
+                }
                 submittedAt={
                   consultation.submittedAt
                     ? new Intl.DateTimeFormat("en-IN", {
@@ -188,7 +253,11 @@ export default async function ConsultationList({
           </tbody>
         </table>
       </div>
-      <ConsultationPagination pagination={pagination} rowCount={rows.length} queryString={queryString} />
+      <ConsultationPagination
+        pagination={pagination}
+        rowCount={rows.length}
+        queryString={queryString}
+      />
     </div>
   );
 }
