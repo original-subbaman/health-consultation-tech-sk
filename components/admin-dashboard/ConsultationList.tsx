@@ -1,5 +1,5 @@
 import { getAdminConsultations } from "@/lib/data/consultation";
-import { Eye } from "lucide-react";
+import AnalyzeConsultationButton from "@/components/admin-dashboard/AnalyzeConsultationButton";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { GetAdminConsultationOptions } from "@/lib/validation/consultation";
@@ -12,10 +12,11 @@ type ConsultationRowProps = {
   doctorAssigned: string;
   chiefComplaint: string;
   status: string;
+  isAnalyzed: boolean;
 };
 
 function ConsultationRow(
-  row: ConsultationRowProps & { action: string; secondaryAction: boolean },
+  row: ConsultationRowProps & { secondaryAction: boolean },
 ) {
   return (
     <tr
@@ -49,24 +50,12 @@ function ConsultationRow(
       </td>
       <td className="whitespace-nowrap px-5 py-4 text-right">
         <div className="flex items-center justify-end gap-2">
-          <button
-            type="button"
-            className={`rounded-lg px-3 py-1.5 font-label-sm text-label-sm font-medium transition-colors ${
-              row.secondaryAction
-                ? "bg-surface-container-high text-on-surface hover:bg-surface-container-highest"
-                : "bg-primary text-on-primary shadow-sm hover:bg-primary-container"
-            }`}
-          >
-            {row.action}
-          </button>
-          <button
-            type="button"
-            className="rounded-lg bg-surface-container-high p-1.5 text-on-surface-variant transition-colors hover:bg-surface-container-highest hover:text-on-surface"
-            aria-label={`View ${row.patientName}'s patient file`}
-            title="View patient file"
-          >
-            <Eye className="size-[18px]" aria-hidden="true" />
-          </button>
+          <AnalyzeConsultationButton
+            consultationId={row.id}
+            patientName={row.patientName}
+            secondaryAction={row.secondaryAction}
+            isAnalyzed={row.isAnalyzed}
+          />
         </div>
       </td>
     </tr>
@@ -218,7 +207,7 @@ export default async function ConsultationList({
             {rows.length === 0 && (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="p-5 text-center text-on-surface-variant"
                 >
                   No consultations found.
@@ -246,8 +235,8 @@ export default async function ConsultationList({
                       }).format(new Date(consultation.submittedAt)) + " IST"
                     : "Not submitted"
                 }
-                action={consultation.doctor ? "Reassign" : "Assign Consultant"}
                 secondaryAction={Boolean(consultation.doctor)}
+                isAnalyzed={consultation.isAnalyzed}
               />
             ))}
           </tbody>

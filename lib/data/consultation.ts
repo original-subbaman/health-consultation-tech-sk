@@ -1,4 +1,6 @@
 import "server-only";
+import { z } from "zod";
+import { generateDiagnosis as generateAssessment } from "@/lib/ai/ai_service";
 
 import {
   consultationFormDefaultValues,
@@ -628,10 +630,8 @@ export async function getAdminConsultations(
     }
 
     const offset = (page - 1) * pageSize;
-    let query = client
-      .from("consultations")
-      .select(
-        `
+    let query = client.from("consultations").select(
+      `
           id,
           status,
           created_at,
@@ -648,10 +648,11 @@ export async function getAdminConsultations(
               specialty
             )
           ),
-          consultation_intakes(chief_complaint)
+          consultation_intakes(chief_complaint),
+          ai_consultation_summary(id)
         `,
-        { count: "exact" },
-      );
+      { count: "exact" },
+    );
 
     query = query.neq("status", "draft");
 
@@ -700,6 +701,7 @@ export async function getAdminConsultations(
         updatedAt: consultation.updated_at,
         submittedAt: consultation.submitted_at,
         completedAt: consultation.completed_at,
+        isAnalyzed: !!consultation.ai_consultation_summary?.id,
         chiefComplaint:
           consultation.consultation_intakes?.chief_complaint ?? null,
         doctor: consultation.doctor
