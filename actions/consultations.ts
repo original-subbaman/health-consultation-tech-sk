@@ -1,7 +1,7 @@
 "use server";
 
 import type { Json, Tables } from "@/database.types";
-import { requirePatient } from "@/lib/auth/auth";
+import { requireAdmin, requirePatient } from "@/lib/auth/auth";
 import { saveMedicalRecordFile } from "@/lib/storage/medical-records";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -22,6 +22,8 @@ import {
   patientMeasurementsSchema,
   updateConsultationStatusSchema,
 } from "@/lib/validation/consultation";
+import z from "zod";
+import { generateDiagnosis } from "@/lib/ai/ai_service";
 
 type ConsultationSummary = Pick<
   Tables<"consultations">,
@@ -355,8 +357,7 @@ export async function saveMedicalHistory(history: MedicalHistory) {
     return {
       success: false,
       message:
-        validationResult.error.issues[0]?.message ??
-        "Invalid medical history",
+        validationResult.error.issues[0]?.message ?? "Invalid medical history",
     };
   }
 
@@ -502,8 +503,7 @@ export async function savePatientAllergies(input: Allergies) {
   if (!validationResult.success) {
     return {
       success: false,
-      message:
-        validationResult.error.issues[0]?.message ?? "Invalid allergies",
+      message: validationResult.error.issues[0]?.message ?? "Invalid allergies",
     };
   }
 
@@ -617,9 +617,7 @@ export async function saveMedicalRecords(formData: FormData) {
         stage: fileResult.stage,
         error: fileResult.error,
         cleanupError:
-          fileResult.stage === "metadata"
-            ? fileResult.cleanupError
-            : undefined,
+          fileResult.stage === "metadata" ? fileResult.cleanupError : undefined,
       });
 
       return {
@@ -784,6 +782,122 @@ export async function submitConsultation(consultationId: string) {
     return {
       success: false,
       message: "Consultation could not be submitted",
+    };
+  }
+}
+
+export async function analyzeConsultation({
+  consultationId,
+}: {
+  consultationId: string;
+}) {
+  await requireAdmin();
+  const parsedId = z.uuid().safeParse(consultationId);
+  if (!parsedId.success) {
+    return { success: false as const, message: "Invalid consultation ID" };
+  }
+  try {
+    const client = await createClient();
+    const { data: consultation, error } = await client
+      .from("consultations")
+      .select(
+        `
+          patient_measurements (
+            systolic_bp,
+            diastolic_bp,
+            measured_at,
+            weight_kg
+          ),
+          consultation_intakes (
+            emergency_symptoms,
+            emergency_symptoms_other,
+            chief_complaint,
+            primary_concern,
+            consultation_goals,
+            consultation_goal_other,
+            general_health_today,
+            current_symptoms,
+            current_symptoms_other,
+            symptom_onset,
+            discomfort_severity,
+            current_issue_trend,
+            speed_of_change,
+            longitudinal_trend,
+            red_flag_symptoms
+          ),
+          patient_medical_history (
+            existing_conditions,
+            current_health_issues
+          ),
+          patient_medications (
+            medication_name,
+            strength,
+            quantity,
+            frequency
+          ),
+          patient_allergies (
+            allergy_name,
+            details
+          ),
+          lifestyle_assessments (
+            recent_significant_weight_change,
+            smoking_status,
+            alcohol_use,
+            additional_health_information
+          )
+        `,
+      )
+      .eq("id", parsedId.data)
+      .neq("status", "draft")
+      .maybeSingle();
+    if (error || !consultation) {
+      return {
+        success: false as const,
+        message: "Consultation could not be loaded for analysis",
+      };
+    }
+    if (!consultation.consultation_intakes) {
+      return {
+        success: false as const,
+        message: "Consultation intake is required for analysis",
+      };
+    }
+    const assessment = await generateDiagnosis(consultation);
+    const { error: saveError } = await client
+      .from("ai_consultation_summary")
+      .upsert(
+        {
+          consultation_id: parsedId.data,
+          summary: assessment.summary,
+          key_findings: assessment.keyFindings,
+          possible_diagnosis: assessment.possibleDiagnoses,
+          missing_information: assessment.missingInformation,
+          concerns: assessment.concernsForClinicianReview,
+        },
+        { onConflict: "consultation_id" },
+      );
+
+    if (saveError) {
+      console.error("Failed to save consultation assessment", {
+        consultationId: parsedId.data,
+        errorCode: saveError.code,
+      });
+      return {
+        success: false as const,
+        message: "Consultation assessment could not be saved at the moment",
+      };
+    }
+
+    return { success: true as const, assessment };
+  } catch (error) {
+    // Provider errors may contain the prompt and sensitive consultation data.
+    console.error("Failed to analyze consultation", {
+      consultationId: parsedId.data,
+      errorType: error instanceof Error ? error.name : "UnknownError",
+    });
+    return {
+      success: false as const,
+      message: "Consultation could not be analyzed at the moment",
     };
   }
 }
