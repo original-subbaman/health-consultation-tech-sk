@@ -4,6 +4,7 @@ import { analyzeConsultation } from "@/actions/consultations";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { useRef, useTransition } from "react";
+import { useRouter } from "next/navigation";
 
 export default function AnalyzeConsultationButton({
   consultationId,
@@ -18,6 +19,7 @@ export default function AnalyzeConsultationButton({
 }) {
   const [isPending, startTransition] = useTransition();
   const dialog = useRef<HTMLDialogElement>(null);
+  const router = useRouter();
 
   function analyze() {
     startTransition(async () => {
@@ -31,6 +33,7 @@ export default function AnalyzeConsultationButton({
           });
           return;
         }
+        router.refresh();
         toast({
           title: "Analysis complete",
           description: result.message,
@@ -56,11 +59,7 @@ export default function AnalyzeConsultationButton({
         aria-label={`${isAnalyzed ? "View AI assessment" : "Analyze consultation"} for ${patientName}`}
         onClick={isAnalyzed ? () => dialog.current?.showModal() : analyze}
       >
-        {isPending
-          ? "Analyzing…"
-          : isAnalyzed
-            ? "View AI assessment"
-            : "Analyze consultation"}
+        {isPending ? "Analyzing…" : isAnalyzed ? "View Analysis" : "Analyse"}
       </Button>
       <span role="status" className="sr-only">
         {isPending ? "Analyzing consultation. Please wait." : ""}

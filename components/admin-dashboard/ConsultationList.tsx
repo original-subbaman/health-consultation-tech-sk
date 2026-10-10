@@ -1,5 +1,6 @@
 import { getAdminConsultations } from "@/lib/data/consultation";
 import AnalyzeConsultationButton from "@/components/admin-dashboard/AnalyzeConsultationButton";
+import ConsultationRowLink from "@/components/admin-dashboard/ConsultationRowLink";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { GetAdminConsultationOptions } from "@/lib/validation/consultation";
@@ -19,16 +20,16 @@ function ConsultationRow(
   row: ConsultationRowProps & { secondaryAction: boolean },
 ) {
   return (
-    <tr
-      className="transition-colors hover:bg-surface-container-low/60"
-      data-name={row.patientName}
+    <ConsultationRowLink
+      href={`/admin/consultation/${row.id}`}
+      patientName={row.patientName}
     >
       <td className="px-5 py-4">
         <div className="flex items-center gap-3">
           <div className="flex flex-col">
-            <span className="font-label-md text-label-md font-semibold leading-tight text-on-surface">
+            <Link href={`/admin/consultation/${row.id}`} className="inline-flex min-h-11 items-center rounded-md font-label-md text-label-md font-semibold leading-tight text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-primary">
               {row.patientName}
-            </span>
+            </Link>
           </div>
         </div>
       </td>
@@ -58,7 +59,7 @@ function ConsultationRow(
           />
         </div>
       </td>
-    </tr>
+    </ConsultationRowLink>
   );
 }
 

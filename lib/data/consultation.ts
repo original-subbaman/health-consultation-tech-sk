@@ -84,6 +84,94 @@ export type GetConsultationFormValuesResult =
       message: string;
     };
 
+export type ConsultationDetails = Tables<"consultations"> & {
+  patient: (Tables<"profiles"> & {
+    patient_profiles: Tables<"patient_profiles"> | null;
+  }) | null;
+  doctor: (Tables<"profiles"> & {
+    doctor_profiles: Tables<"doctor_profiles"> | null;
+  }) | null;
+  consultation_intakes: Tables<"consultation_intakes"> | null;
+  patient_measurements: Tables<"patient_measurements">[];
+  patient_medical_history: Tables<"patient_medical_history"> | null;
+  patient_medications: Tables<"patient_medications">[];
+  patient_allergies: Tables<"patient_allergies">[];
+  lifestyle_assessments: Tables<"lifestyle_assessments"> | null;
+  documents: Tables<"documents">[];
+  ai_consultation_summary: Tables<"ai_consultation_summary"> | null;
+};
+
+export type GetConsultationDetailsResult =
+  | { success: true; consultation: ConsultationDetails }
+  | { success: false; message: string };
+
+/** Fetch a consultation and all related table columns for an admin. */
+export async function getConsultationDetails(
+  consultationId: string,
+): Promise<GetConsultationDetailsResult> {
+  await requireAdmin();
+
+  const parsedId = z.uuid().safeParse(consultationId);
+  if (!parsedId.success) {
+    return { success: false, message: "Invalid consultation ID" };
+  }
+
+  try {
+    const client = await createClient();
+    const { data: consultation, error } = await client
+      .from("consultations")
+      .select(
+        `
+          *,
+          patient:profiles!consultations_patient_id_fkey (
+            *,
+            patient_profiles (*)
+          ),
+          doctor:profiles!consultations_doctor_id_fkey (
+            *,
+            doctor_profiles (*)
+          ),
+          consultation_intakes (*),
+          patient_measurements (*),
+          patient_medical_history (*),
+          patient_medications (*),
+          patient_allergies (*),
+          lifestyle_assessments (*),
+          documents (*),
+          ai_consultation_summary (*)
+        `,
+      )
+      .eq("id", parsedId.data)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Failed to fetch consultation details", {
+        consultationId: parsedId.data,
+        errorCode: error.code,
+      });
+      return {
+        success: false,
+        message: "Consultation details could not be loaded at the moment",
+      };
+    }
+
+    if (!consultation) {
+      return { success: false, message: "Consultation not found" };
+    }
+
+    return { success: true, consultation };
+  } catch (error) {
+    console.error("Failed to fetch consultation details", {
+      consultationId: parsedId.data,
+      errorType: error instanceof Error ? error.name : "UnknownError",
+    });
+    return {
+      success: false,
+      message: "Consultation details could not be loaded at the moment",
+    };
+  }
+}
+
 type LifestyleFormValues =
   ConsultationFormValues["medicalHistory"]["lifestyle"];
 
