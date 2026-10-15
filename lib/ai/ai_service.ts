@@ -1,6 +1,7 @@
 import "server-only";
 
 import { google } from "@ai-sdk/google";
+import { deepSeek } from "@ai-sdk/deepseek";
 import { APICallError, generateText, Output, RetryError } from "ai";
 import { z } from "zod";
 
@@ -21,7 +22,7 @@ const assessmentSchema = z.object({
 export async function generateDiagnosis(consultation: unknown) {
   try {
     const { output } = await generateText({
-      model: google("gemini-2.5-flash"),
+      model: deepSeek("deepseek-flash"),
       output: Output.object({ schema: assessmentSchema }),
       system: `
       Prepare a draft consultation assessment for clinician review.
