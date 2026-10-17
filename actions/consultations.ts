@@ -2,8 +2,10 @@
 
 import type { Json, Tables } from "@/database.types";
 import { requireAdmin, requirePatient } from "@/lib/auth/auth";
+import { USER_ROLES } from "@/lib/constants";
 import { saveMedicalRecordFile } from "@/lib/storage/medical-records";
 import { createClient } from "@/lib/supabase/server";
+import { consultationStatusSchema } from "@/lib/validation/consultation";
 import {
   type Allergies,
   allergiesSchema,
@@ -29,6 +31,8 @@ type ConsultationSummary = Pick<
   Tables<"consultations">,
   "id" | "patient_id" | "status"
 >;
+
+const STATUS = consultationStatusSchema.enum;
 
 export type CreateConsultationResult =
   | {
@@ -898,6 +902,86 @@ export async function analyzeConsultation({
     return {
       success: false as const,
       message: "Consultation could not be analyzed at the moment",
+    };
+  }
+}
+
+export async function assignDoctorForConsultation({
+  consultationId,
+  doctorId,
+}: {
+  consultationId: string;
+  doctorId: string;
+}) {
+  await requireAdmin();
+  const parsedConId = z.uuid().safeParse(consultationId);
+  const parsedDocId = z.uuid().safeParse(doctorId);
+
+  if (!parsedConId.success || !parsedDocId.success) {
+    return {
+      success: false as const,
+      message: "Invalid consultation or doctor ID",
+    };
+  }
+
+  try {
+    const client = await createClient();
+
+    const { data: doctor, error: doctorError } = await client
+      .from("profiles")
+      .select("id")
+      .eq("id", parsedDocId.data)
+      .eq("role", USER_ROLES.CONSULTANT)
+      .maybeSingle();
+
+    if (doctorError) {
+      return {
+        success: false as const,
+        message: "Could not verify doctor",
+      };
+    }
+
+    if (!doctor) {
+      return {
+        success: false as const,
+        message: "Doctor not found",
+      };
+    }
+
+    const { data: consultation, error } = await client
+      .from("consultations")
+      .update({
+        status: STATUS.assigned,
+        doctor_id: parsedDocId.data,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", parsedConId.data)
+      .in("status", [STATUS.submitted, STATUS.assigned])
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      return {
+        success: false,
+        message: "Could not assign doctor",
+      };
+    }
+
+    if (!consultation) {
+      return {
+        success: false as const,
+        message: "Consultation not found or not eligible for assignment",
+      };
+    }
+
+    return {
+      success: true,
+      message: "Doctor assigned successfully",
+    };
+  } catch {
+    return {
+      success: false,
+      message: "Doctor could not be assigned",
     };
   }
 }

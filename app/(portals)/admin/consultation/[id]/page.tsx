@@ -1,12 +1,15 @@
+import { assignDoctorForConsultation } from "@/actions/consultations";
+import AssignDoctorDialog from "@/components/consultation/AssignDoctorDialog";
 import Card from "@/components/consultation/Card";
 import RecordDetails from "@/components/consultation/RecordDetails";
 import Records from "@/components/consultation/Records";
 import Value from "@/components/consultation/Value";
+import { buttonStyles } from "@/components/ui/button";
+import { getDoctorOptions } from "@/lib/data/consultant";
+import { getConsultationDetails } from "@/lib/data/consultation";
+import { ArrowLeft, ClipboardList, FileText, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ClipboardList, FileText, Sparkles } from "lucide-react";
-import { getConsultationDetails } from "@/lib/data/consultation";
-import { buttonStyles } from "@/components/ui/button";
 
 export default async function ConsultationDetail({
   params,
@@ -65,6 +68,15 @@ export default async function ConsultationDetail({
     updated_at: c.updated_at,
   };
 
+  let doctors: Awaited<ReturnType<typeof getDoctorOptions>> = [];
+  let doctorsError: string | undefined;
+  try {
+    doctors = await getDoctorOptions();
+  } catch {
+    doctorsError =
+      "Doctors could not be loaded. Please refresh the page to try again.";
+  }
+
   return (
     <div className="@container mx-auto max-w-6xl space-y-8 pb-4">
       <header className="space-y-5">
@@ -92,17 +104,25 @@ export default async function ConsultationDetail({
             {c.status.replace(/_/g, " ")}
           </span>
         </div>
-        <div className="flex flex-wrap gap-x-8 gap-y-3 rounded-xl bg-surface-container-low p-4 text-sm">
-          <p>
-            <span className="text-on-surface-variant">Assigned doctor: </span>
-            <span className="font-medium">
-              {c.doctor?.full_name ?? "Not assigned"}
-            </span>
-          </p>
-          <p>
-            <span className="text-on-surface-variant">Submitted: </span>
-            <Value value={c.submitted_at} field="submitted_at" />
-          </p>
+        <div className="flex justify-between items-center gap-y-3 rounded-xl bg-surface-container-low p-3 text-sm">
+          <div className="flex flex-wrap gap-x-8">
+            <p>
+              <span className="text-on-surface-variant">Assigned doctor: </span>
+              <span className="font-medium">
+                {c.doctor?.full_name ?? "Not assigned"}
+              </span>
+            </p>
+            <p>
+              <span className="text-on-surface-variant">Submitted: </span>
+              <Value value={c.submitted_at} field="submitted_at" />
+            </p>
+          </div>
+          <AssignDoctorDialog
+            doctors={doctors}
+            error={doctorsError}
+            assignDoctor={assignDoctorForConsultation}
+            consultationId={consultation.id}
+          />
         </div>
         <nav
           aria-label="Consultation sections"

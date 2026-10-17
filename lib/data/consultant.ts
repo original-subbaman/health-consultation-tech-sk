@@ -13,6 +13,34 @@ export type ConsultantProfile = {
   createdAt: string;
 };
 
+/** Minimal doctor details for the admin consultation picker. */
+export async function getDoctorOptions() {
+  await requireAdmin();
+  const client = await createClient();
+  const doctors: { id: string; label: string; specialty: string | null }[] = [];
+
+  // Supabase caps result sizes, so fetch every page of doctors.
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await client
+      .from("profiles")
+      .select("id, full_name, doctor_profiles(specialty)")
+      .eq("role", USER_ROLES.CONSULTANT)
+      .order("full_name")
+      .order("id")
+      .range(offset, offset + 999);
+
+    if (error) throw new Error("Failed to fetch doctors");
+    doctors.push(...data.map((doctor) => ({
+      id: doctor.id,
+      label: doctor.full_name,
+      specialty: doctor.doctor_profiles?.specialty ?? null,
+    })));
+    if (data.length < 1000) break;
+  }
+
+  return doctors;
+}
+
 export async function getConsultants({
   name,
   limit = 10,
