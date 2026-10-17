@@ -25,3 +25,11 @@ export function getSalutation(date = new Date()): Salutation {
 export function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
+
+export function formatUnderscoreText(text: string | null | undefined): string {
+  if (!text) return "";
+  const splitText = text.replace(/_/g, " ").split(" ");
+  return splitText
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
