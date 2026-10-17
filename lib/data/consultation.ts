@@ -84,13 +84,23 @@ export type GetConsultationFormValuesResult =
       message: string;
     };
 
-export type ConsultationDetails = Tables<"consultations"> & {
-  patient: (Tables<"profiles"> & {
-    patient_profiles: Tables<"patient_profiles"> | null;
-  }) | null;
-  doctor: (Tables<"profiles"> & {
-    doctor_profiles: Tables<"doctor_profiles"> | null;
-  }) | null;
+type PatientProfile = Pick<Tables<"profiles">, "id" | "full_name"> & {
+  patient_profiles: Pick<
+    Tables<"patient_profiles">,
+    "height_cm" | "sex" | "date_of_birth"
+  > | null;
+};
+
+export type ConsultationDetails = Pick<
+  Tables<"consultations">,
+  "id" | "submitted_at"
+> & {
+  patient: PatientProfile | null;
+  doctor:
+    | (Tables<"profiles"> & {
+        doctor_profiles: Tables<"doctor_profiles"> | null;
+      })
+    | null;
   consultation_intakes: Tables<"consultation_intakes"> | null;
   patient_measurements: Tables<"patient_measurements">[];
   patient_medical_history: Tables<"patient_medical_history"> | null;
@@ -122,10 +132,12 @@ export async function getConsultationDetails(
       .from("consultations")
       .select(
         `
-          *,
+          id,
+          submitted_at,
           patient:profiles!consultations_patient_id_fkey (
-            *,
-            patient_profiles (*)
+            id,
+            full_name,
+            patient_profiles (height_cm, sex, date_of_birth)
           ),
           doctor:profiles!consultations_doctor_id_fkey (
             *,
