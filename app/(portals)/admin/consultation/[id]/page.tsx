@@ -1,5 +1,10 @@
 import { assignDoctorForConsultation } from "@/actions/consultations";
-import AssignDoctorDialog from "@/components/consultation/AssignDoctorDialog";
+import PatientDetails from "@/components/consultation-details/PatientDetails";
+import PatientInformationSection from "@/components/consultation-details/PatientInformationSection";
+import MedicalHistorySection from "@/components/consultation-details/MedicalHistorySection";
+import LifestyleSignalsSection from "@/components/consultation-details/LifestyleSignalsSection";
+import BaselineSnapshotSection from "@/components/consultation-details/BaselineSnapshotSection";
+import SymptomsAndTrendsSection from "@/components/consultation-details/SymptomsAndTrendsSection";
 import { buttonStyles } from "@/components/ui/button";
 import { getDoctorOptions } from "@/lib/data/consultant";
 import { getConsultationDetails } from "@/lib/data/consultation";
@@ -51,8 +56,6 @@ export default async function ConsultationDetail({
   }
 
   const c = result.consultation;
-  const { patient_profiles: patientProfile, ...patient } = c.patient ?? {};
-  const { doctor_profiles: doctorProfile, ...doctor } = c.doctor ?? {};
   const consultation = {
     status: c.status,
     submitted_at: c.submitted_at,
@@ -83,33 +86,15 @@ export default async function ConsultationDetail({
           <ArrowLeft className="size-4" aria-hidden="true" /> Back to
           consultations
         </Link>
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="mb-2 text-sm font-medium text-primary">
-              Consultation details
-            </p>
-            <h1 className="wrap-break-words font-headline-lg text-headline-lg text-on-surface">
-              {c.patient?.full_name ?? "Patient name not recorded"}
-            </h1>
-            <p className="mt-3 max-w-2xl wrap-break-words text-lg text-on-surface-variant">
-              {c.consultation_intakes?.chief_complaint ||
-                "Chief complaint not recorded"}
-            </p>
-          </div>
-        </div>
-        <div className="flex justify-between items-center gap-y-3 rounded-xl bg-surface-container-low p-3 text-sm">
-          <div className="flex flex-wrap gap-x-8">
-            <p>
-              <span className="text-on-surface-variant">Assigned doctor: </span>
-              <span className="font-medium">
-                {c.doctor?.full_name ?? "Not assigned"}
-              </span>
-            </p>
-            <p>
-              <span className="text-on-surface-variant">Submitted: </span>
-            </p>
-          </div>
-          <AssignDoctorDialog
+        <div className="flex flex-col items-start gap-4">
+          <p className="mb-2 text-sm font-medium text-primary">
+            Consultation details
+          </p>
+          <PatientDetails
+            patientName={c.patient?.full_name}
+            dob={c.patient?.patient_profiles?.date_of_birth}
+            assignedDoctor={c.doctor?.full_name}
+            status={c.status}
             doctors={doctors}
             error={doctorsError}
             assignDoctor={assignDoctorForConsultation}
@@ -117,6 +102,25 @@ export default async function ConsultationDetail({
           />
         </div>
       </header>
+      <div className="grid grid-cols-2 gap-6">
+        {/* col 1 */}
+        <div className="col-span-2 space-y-6 lg:col-span-1">
+          {/* Patient Information */}
+          <PatientInformationSection measurement={c.patient_measurements[0]} />
+          <MedicalHistorySection
+            history={c.patient_medical_history}
+            medications={c.patient_medications}
+            allergies={c.patient_allergies}
+            documents={c.documents}
+          />
+          <LifestyleSignalsSection lifestyle={c.lifestyle_assessments} />
+        </div>
+        {/* col 2 */}
+        <div className="col-span-2 space-y-6 lg:col-span-1">
+          <BaselineSnapshotSection intake={c.consultation_intakes} />
+          <SymptomsAndTrendsSection intake={c.consultation_intakes} />
+        </div>
+      </div>
     </div>
   );
 }
