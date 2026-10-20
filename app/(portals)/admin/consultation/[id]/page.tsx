@@ -5,6 +5,7 @@ import MedicalHistorySection from "@/components/consultation-details/MedicalHist
 import LifestyleSignalsSection from "@/components/consultation-details/LifestyleSignalsSection";
 import BaselineSnapshotSection from "@/components/consultation-details/BaselineSnapshotSection";
 import SymptomsAndTrendsSection from "@/components/consultation-details/SymptomsAndTrendsSection";
+import AIEvaluationSection from "@/components/consultation-details/AIEvaluationSection";
 import { buttonStyles } from "@/components/ui/button";
 import { getDoctorOptions } from "@/lib/data/consultant";
 import { getConsultationDetails } from "@/lib/data/consultation";
@@ -102,6 +103,11 @@ export default async function ConsultationDetail({
           />
         </div>
       </header>
+      <AIEvaluationSection
+        evaluation={c.ai_clinical_evaluations}
+        consultationId={c.id}
+        patientName={c.patient?.full_name ?? "Patient name not recorded"}
+      />
       <div className="grid grid-cols-2 gap-6">
         {/* col 1 */}
         <div className="col-span-2 space-y-6 lg:col-span-1">
