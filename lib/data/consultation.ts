@@ -105,7 +105,7 @@ export type ConsultationDetails = Tables<"consultations"> & {
   patient_allergies: Tables<"patient_allergies">[];
   lifestyle_assessments: Tables<"lifestyle_assessments"> | null;
   documents: Tables<"documents">[];
-  ai_consultation_summary: Tables<"ai_consultation_summary"> | null;
+  ai_clinical_evaluations: Tables<"ai_clinical_evaluations"> | null;
 };
 
 export type GetConsultationDetailsResult =
@@ -146,7 +146,7 @@ export async function getConsultationDetails(
           patient_allergies (*),
           lifestyle_assessments (*),
           documents (*),
-          ai_consultation_summary (*)
+          ai_clinical_evaluations (*)
         `,
       )
       .eq("id", parsedId.data)
@@ -745,7 +745,7 @@ export async function getAdminConsultations(
             )
           ),
           consultation_intakes(chief_complaint),
-          ai_consultation_summary(id)
+          ai_clinical_evaluations(id)
         `,
       { count: "exact" },
     );
@@ -797,7 +797,7 @@ export async function getAdminConsultations(
         updatedAt: consultation.updated_at,
         submittedAt: consultation.submitted_at,
         completedAt: consultation.completed_at,
-        isAnalyzed: !!consultation.ai_consultation_summary?.id,
+        isAnalyzed: !!consultation.ai_clinical_evaluations?.id,
         chiefComplaint:
           consultation.consultation_intakes?.chief_complaint ?? null,
         doctor: consultation.doctor

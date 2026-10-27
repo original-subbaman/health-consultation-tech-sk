@@ -25,7 +25,11 @@ import {
   updateConsultationStatusSchema,
 } from "@/lib/validation/consultation";
 import z from "zod";
-import { generateDiagnosis } from "@/lib/ai/ai_service";
+import {
+  CLINICAL_EVALUATION_MODEL,
+  CLINICAL_EVALUATION_PROMPT_VERSION,
+  generateDiagnosis,
+} from "@/lib/ai/ai_service";
 
 type ConsultationSummary = Pick<
   Tables<"consultations">,
@@ -868,10 +872,12 @@ export async function analyzeConsultation({
     }
     const assessment = await generateDiagnosis(consultation);
     const { error: saveError } = await client
-      .from("ai_consultation_summary")
+      .from("ai_clinical_evaluations")
       .upsert(
         {
           consultation_id: parsedId.data,
+          model: CLINICAL_EVALUATION_MODEL,
+          prompt_version: CLINICAL_EVALUATION_PROMPT_VERSION,
           summary: assessment.summary,
           key_findings: assessment.keyFindings,
           possible_diagnosis: assessment.possibleDiagnoses,

@@ -19,10 +19,13 @@ const assessmentSchema = z.object({
   concernsForClinicianReview: z.array(z.string()),
 });
 
+export const CLINICAL_EVALUATION_MODEL = "deepseek-flash";
+export const CLINICAL_EVALUATION_PROMPT_VERSION = "v1";
+
 export async function generateDiagnosis(consultation: unknown) {
   try {
     const { output } = await generateText({
-      model: deepSeek("deepseek-flash"),
+      model: deepSeek(CLINICAL_EVALUATION_MODEL),
       output: Output.object({ schema: assessmentSchema }),
       system: `
       Prepare a draft consultation assessment for clinician review.
