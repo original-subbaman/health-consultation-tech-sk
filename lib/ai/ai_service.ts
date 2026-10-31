@@ -1,9 +1,11 @@
 import "server-only";
 
-import { google } from "@ai-sdk/google";
 import { deepSeek } from "@ai-sdk/deepseek";
 import { APICallError, generateText, Output, RetryError } from "ai";
 import { z } from "zod";
+
+export const currAIModel = "deepseek-flash";
+export const promptVersion = "v1.0.0";
 
 const assessmentSchema = z.object({
   summary: z.string(),

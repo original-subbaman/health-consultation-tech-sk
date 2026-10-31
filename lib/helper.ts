@@ -26,6 +26,27 @@ export function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+export function calculateAge(
+  dob: string | null | undefined,
+  today = new Date(),
+): number | null {
+  if (!dob) return null;
+
+  const birthDate = new Date(`${dob}T00:00:00`);
+  if (Number.isNaN(birthDate.getTime()) || birthDate > today) return null;
+
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDifference = today.getMonth() - birthDate.getMonth();
+  if (
+    monthDifference < 0 ||
+    (monthDifference === 0 && today.getDate() < birthDate.getDate())
+  ) {
+    age--;
+  }
+
+  return age;
+}
+
 export function formatUnderscoreText(text: string | null | undefined): string {
   if (!text) return "";
   const splitText = text.replace(/_/g, " ").split(" ");
