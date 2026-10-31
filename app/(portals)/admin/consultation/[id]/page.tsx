@@ -6,6 +6,7 @@ import LifestyleSignalsSection from "@/components/consultation-details/Lifestyle
 import BaselineSnapshotSection from "@/components/consultation-details/BaselineSnapshotSection";
 import SymptomsAndTrendsSection from "@/components/consultation-details/SymptomsAndTrendsSection";
 import AIEvaluationSection from "@/components/consultation-details/AIEvaluationSection";
+import AIConsultationScriptSection from "@/components/consultation-details/AIConsultationScriptSection";
 import { buttonStyles } from "@/components/ui/button";
 import { getDoctorOptions } from "@/lib/data/consultant";
 import { getConsultationDetails } from "@/lib/data/consultation";
@@ -88,9 +89,6 @@ export default async function ConsultationDetail({
           consultations
         </Link>
         <div className="flex flex-col items-start gap-4">
-          <p className="mb-2 text-sm font-medium text-primary">
-            Consultation details
-          </p>
           <PatientDetails
             patientName={c.patient?.full_name}
             dob={c.patient?.patient_profiles?.date_of_birth}
@@ -108,6 +106,12 @@ export default async function ConsultationDetail({
         consultationId={c.id}
         patientName={c.patient?.full_name ?? "Patient name not recorded"}
       />
+      {c.ai_clinical_evaluations && (
+        <AIConsultationScriptSection
+          key={c.ai_clinical_evaluations.id}
+          consultationId={c.id}
+        />
+      )}
       <div className="grid grid-cols-2 gap-6">
         {/* col 1 */}
         <div className="col-span-2 space-y-6 lg:col-span-1">

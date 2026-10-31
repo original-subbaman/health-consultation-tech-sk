@@ -29,6 +29,7 @@ import {
   CLINICAL_EVALUATION_MODEL,
   CLINICAL_EVALUATION_PROMPT_VERSION,
   generateDiagnosis,
+  generateScript,
 } from "@/lib/ai/ai_service";
 
 type ConsultationSummary = Pick<
@@ -37,6 +38,73 @@ type ConsultationSummary = Pick<
 >;
 
 const STATUS = consultationStatusSchema.enum;
+
+export async function generateConsultationScript({
+  consultationId,
+}: {
+  consultationId: string;
+}) {
+  await requireAdmin();
+  const parsedId = z.uuid().safeParse(consultationId);
+  if (!parsedId.success) {
+    return { success: false as const, message: "Invalid consultation ID" };
+  }
+  try {
+    const client = await createClient();
+    const { data: evaluation, error } = await client
+      .from("ai_clinical_evaluations")
+      .select(
+        "id, summary, key_findings, possible_diagnosis, missing_information, concerns",
+      )
+      .eq("consultation_id", parsedId.data)
+      .maybeSingle();
+    if (error || !evaluation) {
+      return {
+        success: false as const,
+        message: "An AI evaluation is required before generating a script.",
+      };
+    }
+
+    const script = (await generateScript(evaluation)).trim();
+    if (!script) {
+      return {
+        success: false as const,
+        message: "No script was generated. Please try again.",
+      };
+    }
+
+    // Save the script
+    const { error: saveError } = await client
+      .from("consultation_audio_briefings")
+      .insert({
+        consultation_id: parsedId.data,
+        ai_summary_id: evaluation.id,
+        script,
+      });
+
+    if (saveError) {
+      console.error("Failed to save consultation script", {
+        consultationId: parsedId.data,
+        errorCode: saveError.code,
+      });
+      return {
+        success: false as const,
+        message: "Consultation script could not be saved. Please try again.",
+      };
+    }
+
+    return { success: true as const, script };
+  } catch (error) {
+    // Provider errors can contain sensitive evaluation data.
+    console.error("Failed to generate consultation script", {
+      errorType: error instanceof Error ? error.name : "UnknownError",
+    });
+    return {
+      success: false as const,
+      message: "Consultation script could not be generated. Please try again.",
+    };
+  }
+}
 
 export type CreateConsultationResult =
   | {
