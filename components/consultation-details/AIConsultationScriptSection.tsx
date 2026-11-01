@@ -7,11 +7,15 @@ import { useState, useTransition } from "react";
 
 export default function AIConsultationScriptSection({
   consultationId,
+  savedScript,
+  initialLoadError = null,
 }: {
   consultationId: string;
+  savedScript: string | null;
+  initialLoadError?: string | null;
 }) {
-  const [script, setScript] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [script, setScript] = useState<string | null>(savedScript);
+  const [error, setError] = useState<string | null>(initialLoadError);
   const [isPending, startTransition] = useTransition();
 
   function generate() {

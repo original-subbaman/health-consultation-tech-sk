@@ -823,3 +823,78 @@ export async function getAdminConsultations(
     };
   }
 }
+
+export type GetConsultationScriptResult =
+  | {
+      success: true;
+      data: { id: string; script: string };
+    }
+  | {
+      success: false;
+      code: "INVALID_ID" | "NOT_AVAILABLE" | "LOAD_FAILED";
+      message: string;
+    };
+
+/** Fetch the newest briefing script for an admin. */
+export async function getConsultationScript(
+  consultationId: string,
+): Promise<GetConsultationScriptResult> {
+  await requireAdmin();
+
+  const parsedId = z.uuid().safeParse(consultationId);
+  if (!parsedId.success) {
+    return {
+      success: false,
+      code: "INVALID_ID",
+      message: "Invalid consultation ID",
+    };
+  }
+
+  try {
+    const client = await createClient();
+
+    const { data: script, error } = await client
+      .from("consultation_audio_briefings")
+      .select("id, script")
+      .eq("consultation_id", parsedId.data)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Failed to fetch consultation script", {
+        consultationId: parsedId.data,
+        errorCode: error.code,
+      });
+      return {
+        success: false,
+        code: "LOAD_FAILED",
+        message: "Consultation script could not be loaded at the moment",
+      };
+    }
+
+    if (!script?.script?.trim()) {
+      return {
+        success: false,
+        code: "NOT_AVAILABLE",
+        message: "Consultation script is not available yet",
+      };
+    }
+
+    return {
+      success: true,
+      data: { id: script.id, script: script.script },
+    };
+  } catch (error) {
+    console.error("Failed to fetch consultation script", {
+      consultationId: parsedId.data,
+      errorType: error instanceof Error ? error.name : "UnknownError",
+    });
+    return {
+      success: false,
+      code: "LOAD_FAILED",
+      message: "Consultation script could not be loaded at the moment",
+    };
+  }
+}

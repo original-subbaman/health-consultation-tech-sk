@@ -9,7 +9,10 @@ import AIEvaluationSection from "@/components/consultation-details/AIEvaluationS
 import AIConsultationScriptSection from "@/components/consultation-details/AIConsultationScriptSection";
 import { buttonStyles } from "@/components/ui/button";
 import { getDoctorOptions } from "@/lib/data/consultant";
-import { getConsultationDetails } from "@/lib/data/consultation";
+import {
+  getConsultationDetails,
+  getConsultationScript,
+} from "@/lib/data/consultation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -58,6 +61,14 @@ export default async function ConsultationDetail({
   }
 
   const c = result.consultation;
+  const scriptResult = c.ai_clinical_evaluations
+    ? await getConsultationScript(c.id)
+    : null;
+  const savedScript = scriptResult?.success ? scriptResult.data.script : null;
+  const scriptLoadError =
+    scriptResult && !scriptResult.success && scriptResult.code !== "NOT_AVAILABLE"
+      ? scriptResult.message
+      : null;
   const consultation = {
     status: c.status,
     submitted_at: c.submitted_at,
@@ -108,8 +119,15 @@ export default async function ConsultationDetail({
       />
       {c.ai_clinical_evaluations && (
         <AIConsultationScriptSection
-          key={c.ai_clinical_evaluations.id}
+          key={JSON.stringify([
+            c.id,
+            c.ai_clinical_evaluations.id,
+            savedScript,
+            scriptLoadError,
+          ])}
           consultationId={c.id}
+          savedScript={savedScript}
+          initialLoadError={scriptLoadError}
         />
       )}
       <div className="grid grid-cols-2 gap-6">
