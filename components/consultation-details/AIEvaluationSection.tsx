@@ -50,20 +50,9 @@ export default function AIEvaluationSection({
 }) {
   const diagnoses = diagnosesSchema.safeParse(evaluation?.possible_diagnosis);
   const createdAt = evaluation ? new Date(evaluation.created_at) : null;
-  const formattedDate =
-    createdAt && !Number.isNaN(createdAt.getTime())
-      ? new Intl.DateTimeFormat("en-IN", {
-          dateStyle: "medium",
-          timeStyle: "short",
-          timeZone: "Asia/Kolkata",
-        }).format(createdAt) + " IST"
-      : null;
 
   return (
-    <details
-      open
-      className="group rounded-xl bg-surface-container-lowest shadow-sm"
-    >
+    <details className="group rounded-xl bg-surface-container-lowest shadow-sm">
       <summary className="flex cursor-pointer list-none items-center gap-3 rounded-xl p-6 outline-none focus-visible:ring-2 focus-visible:ring-primary [&::-webkit-details-marker]:hidden">
         <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
           <Sparkles className="size-5" aria-hidden="true" />
