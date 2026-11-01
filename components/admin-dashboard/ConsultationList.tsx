@@ -27,7 +27,10 @@ function ConsultationRow(
       <td className="px-5 py-4">
         <div className="flex items-center gap-3">
           <div className="flex flex-col">
-            <Link href={`/admin/consultation/${row.id}`} className="inline-flex min-h-11 items-center rounded-md font-label-md text-label-md font-semibold leading-tight text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-primary">
+            <Link
+              href={`/admin/consultation/${row.id}`}
+              className="inline-flex min-h-11 items-center rounded-md font-label-md text-label-md font-semibold leading-tight text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-primary"
+            >
               {row.patientName}
             </Link>
           </div>
@@ -47,16 +50,6 @@ function ConsultationRow(
           <span className="font-label-md text-label-md font-medium text-on-surface">
             {row.submittedAt}
           </span>
-        </div>
-      </td>
-      <td className="whitespace-nowrap px-5 py-4 text-right">
-        <div className="flex items-center justify-end gap-2">
-          <AnalyzeConsultationButton
-            consultationId={row.id}
-            patientName={row.patientName}
-            secondaryAction={row.secondaryAction}
-            isAnalyzed={row.isAnalyzed}
-          />
         </div>
       </td>
     </ConsultationRowLink>
@@ -198,9 +191,6 @@ export default async function ConsultationList({
               </th>
               <th scope="col" className="px-4 py-3">
                 Submitted At
-              </th>
-              <th scope="col" className="px-5 py-3 text-right">
-                Actions
               </th>
             </tr>
           </thead>
