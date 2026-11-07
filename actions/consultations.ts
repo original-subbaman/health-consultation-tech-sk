@@ -2,6 +2,7 @@
 
 import type { Json, Tables } from "@/database.types";
 import { requireAdmin, requirePatient } from "@/lib/auth/auth";
+import { getConsultationScript } from "@/lib/data/consultation";
 import { USER_ROLES } from "@/lib/constants";
 import { saveMedicalRecordFile } from "@/lib/storage/medical-records";
 import { createClient } from "@/lib/supabase/server";
@@ -29,6 +30,7 @@ import {
   CLINICAL_EVALUATION_MODEL,
   CLINICAL_EVALUATION_PROMPT_VERSION,
   generateDiagnosis,
+  generateConsultationAudio,
   generateScript,
 } from "@/lib/ai/ai_service";
 
@@ -38,6 +40,32 @@ type ConsultationSummary = Pick<
 >;
 
 const STATUS = consultationStatusSchema.enum;
+
+export async function generateConsultationAudioAction({
+  consultationId,
+}: {
+  consultationId: string;
+}) {
+  // This loader authenticates the admin, validates the ID, and uses RLS.
+  // Read the saved script rather than accepting arbitrary text from the browser.
+  const result = await getConsultationScript(consultationId);
+  if (!result.success) {
+    return { success: false as const, message: result.message };
+  }
+
+  try {
+    const audio = await generateConsultationAudio(result.data.script);
+    return { success: true as const, audio, script: result.data.script };
+  } catch (error) {
+    console.error("Failed to generate consultation audio", {
+      errorType: error instanceof Error ? error.name : "UnknownError",
+    });
+    return {
+      success: false as const,
+      message: "Consultation audio could not be generated. Please try again.",
+    };
+  }
+}
 
 export async function generateConsultationScript({
   consultationId,

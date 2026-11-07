@@ -3,6 +3,7 @@ import "server-only";
 import { deepSeek } from "@ai-sdk/deepseek";
 import { APICallError, generateText, Output, RetryError } from "ai";
 import { z } from "zod";
+import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 
 export const currAIModel = "deepseek-flash";
 export const promptVersion = "v1.0.0";
@@ -19,6 +20,10 @@ const assessmentSchema = z.object({
   ),
   missingInformation: z.array(z.string()),
   concernsForClinicianReview: z.array(z.string()),
+});
+
+const elevenlabs = new ElevenLabsClient({
+  apiKey: process.env.ELEVEN_LABS_API_KEY,
 });
 
 export const CLINICAL_EVALUATION_MODEL = "deepseek-flash";
@@ -108,5 +113,62 @@ export async function generateDiagnosis(consultation: unknown) {
     });
 
     throw error;
+  }
+}
+
+const consultationAudioInputSchema = z.object({
+  script: z.string().trim().min(1).max(10_000),
+});
+
+// Bound buffering independently of the provider's text limit.
+const MAX_CONSULTATION_AUDIO_BYTES = 10 * 1024 * 1024;
+
+export async function generateConsultationAudio(
+  script: string,
+): Promise<Uint8Array> {
+  let reader;
+  try {
+    const input = consultationAudioInputSchema.parse({ script });
+    const audio = await elevenlabs.textToSpeech.convert(
+      "RZPbLuoKNL9bpdZW794Z",
+      {
+        text: input.script,
+        modelId: "eleven_v4",
+        outputFormat: "mp3_44100_128",
+      },
+    );
+
+    reader = audio.getReader();
+    const chunks: Uint8Array[] = [];
+    let totalBytes = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      totalBytes += value.byteLength;
+      if (totalBytes > MAX_CONSULTATION_AUDIO_BYTES) {
+        throw new Error("Consultation audio exceeds the maximum allowed size");
+      }
+      chunks.push(value);
+    }
+
+    if (totalBytes === 0) {
+      throw new Error("No consultation audio was generated");
+    }
+
+    const result = new Uint8Array(totalBytes);
+    let offset = 0;
+    for (const chunk of chunks) {
+      result.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    return result;
+  } catch (error) {
+    console.log("🚀 ~ generateConsultationAudio ~ error:", error);
+    // Cleanup must not mask the original generation/read failure.
+    await reader?.cancel().catch(() => {});
+    throw error;
+  } finally {
+    reader?.releaseLock();
   }
 }

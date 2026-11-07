@@ -1,9 +1,12 @@
 "use client";
 
-import { generateConsultationScript } from "@/actions/consultations";
+import {
+  generateConsultationAudioAction,
+  generateConsultationScript,
+} from "@/actions/consultations";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, FileText } from "lucide-react";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 export default function AIConsultationScriptSection({
   consultationId,
@@ -17,6 +20,56 @@ export default function AIConsultationScriptSection({
   const [script, setScript] = useState<string | null>(savedScript);
   const [error, setError] = useState<string | null>(initialLoadError);
   const [isPending, startTransition] = useTransition();
+  const [isAudioPending, startAudioTransition] = useTransition();
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const currentAudioUrl = useRef<string | null>(null);
+  const mounted = useRef(false);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      if (currentAudioUrl.current) URL.revokeObjectURL(currentAudioUrl.current);
+    };
+  }, []);
+
+  function clearAudio() {
+    if (currentAudioUrl.current) URL.revokeObjectURL(currentAudioUrl.current);
+    currentAudioUrl.current = null;
+    setAudioUrl(null);
+  }
+
+  function generateAudio() {
+    if (!script?.trim() || isPending || isAudioPending) return;
+    setError(null);
+    startAudioTransition(async () => {
+      try {
+        const result = await generateConsultationAudioAction({
+          consultationId,
+        });
+        if (!mounted.current) return;
+        if (!result.success) {
+          setError(result.message);
+          return;
+        }
+        // Keep the displayed text aligned with the saved script that was spoken.
+        setScript(result.script);
+        const blob = new Blob([new Uint8Array(result.audio)], {
+          type: "audio/mpeg",
+        });
+        const url = URL.createObjectURL(blob);
+        clearAudio();
+        currentAudioUrl.current = url;
+        setAudioUrl(url);
+      } catch {
+        if (mounted.current) {
+          setError(
+            "Consultation audio could not be generated. Please try again.",
+          );
+        }
+      }
+    });
+  }
 
   function generate() {
     setError(null);
@@ -28,6 +81,7 @@ export default function AIConsultationScriptSection({
           return;
         }
         setScript(result.script);
+        clearAudio();
       } catch {
         setError(
           "Consultation script could not be generated. Please try again.",
@@ -56,27 +110,57 @@ export default function AIConsultationScriptSection({
       <div className="space-y-5 px-6 pb-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p role="status" className="text-sm text-on-surface-variant">
-            {isPending
-              ? "Generating the consultation briefing. Please wait."
-              : "A spoken briefing based on the AI evaluation, for clinician review."}
+            {isAudioPending
+              ? "Generating audio. Please wait."
+              : isPending
+                ? "Generating the consultation briefing. Please wait."
+                : "A spoken briefing based on the AI evaluation, for clinician review."}
           </p>
-          <Button
-            onClick={generate}
-            disabled={isPending}
-            aria-busy={isPending}
-            className="shrink-0"
-          >
-            {isPending
-              ? "Generating..."
-              : script
-                ? "Regenerate script"
-                : "Generate script"}
-          </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              onClick={generate}
+              disabled={isPending || isAudioPending}
+              aria-busy={isPending}
+              className="shrink-0"
+            >
+              {isPending
+                ? "Generating..."
+                : script
+                  ? "Regenerate script"
+                  : "Generate script"}
+            </Button>
+            {script?.trim() && (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={generateAudio}
+                disabled={isPending || isAudioPending}
+                aria-busy={isAudioPending}
+                className="shrink-0"
+              >
+                {isAudioPending ? "Generating Audio..." : "Generate Audio"}
+              </Button>
+            )}
+          </div>
         </div>
         {error && (
           <p role="alert" className="text-sm text-error">
             {error}
           </p>
+        )}
+        {audioUrl && (
+          <audio
+            key={audioUrl}
+            controls
+            src={audioUrl}
+            aria-label="AI consultation briefing audio"
+            className="w-full"
+            onError={() =>
+              setError(
+                "The generated audio could not be played. Please try generating it again.",
+              )
+            }
+          />
         )}
         {script && (
           <div className="whitespace-pre-wrap wrap-break-words rounded-lg bg-surface-container-low p-4 leading-relaxed text-on-surface">
